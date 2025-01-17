@@ -63,34 +63,50 @@ jobs:
           }
           
           :root {
-            --main-width: 960px;    /* 增加主内容区域宽度 */
+            --main-width: 960px;    /* 主内容区域宽度 */
             --header-height: 60px;
             --toc-width: 240px;     /* 目录宽度 */
           }
           
-          .main {
-            max-width: var(--main-width);
+          /* 页面容器 */
+          .container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
             margin: 0 auto;
             padding: 0 15px;
-            display: flex;          /* 使用 flex 布局 */
-            gap: 40px;             /* 元素间距 */
+            max-width: calc(var(--main-width) + var(--toc-width) + 40px);
           }
           
           /* 左侧目录样式 */
           .toc {
-            position: sticky;       /* 使用 sticky 定位 */
+            position: fixed;
+            left: max(20px, calc((100% - var(--main-width) - var(--toc-width) - 40px))/2);
             top: var(--header-height);
             width: var(--toc-width);
             height: calc(100vh - var(--header-height) - 20px);
             overflow-y: auto;
-            flex-shrink: 0;        /* 防止目录被压缩 */
             background: var(--entry);
             border-radius: 8px;
             padding: 1rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             font-size: 0.9em;
+            z-index: 100;
           }
           
+          /* 主内容区域 */
+          .main {
+            width: var(--main-width);
+            margin-left: calc(var(--toc-width) + 40px); /* 为左侧目录留出空间 */
+          }
+          
+          /* 文章内容区域样式 */
+          .post-content {
+            font-size: 1rem;
+            line-height: 1.8;
+          }
+          
+          /* 目录样式 */
           .toc details {
             border-left: 2px solid var(--border);
             margin-left: 0.5rem;
@@ -119,29 +135,24 @@ jobs:
             display: inline-block;
           }
           
-          /* 文章内容区域样式 */
-          .post-content {
-            flex-grow: 1;         /* 让内容区域占据剩余空间 */
-            min-width: 0;         /* 防止内容溢出 */
-            font-size: 1rem;
-            line-height: 1.8;
-          }
-          
           /* 移动设备适配 */
           @media screen and (max-width: 1400px) {
-            :root {
-              --main-width: 720px;  /* 在小屏幕上减小宽度 */
-            }
-            
-            .main {
-              flex-direction: column;  /* 改为垂直布局 */
+            .container {
+              flex-direction: column;
+              max-width: var(--main-width);
             }
             
             .toc {
               position: relative;
+              left: 0;
               width: 100%;
               height: auto;
               margin-bottom: 2rem;
+            }
+            
+            .main {
+              width: 100%;
+              margin-left: 0;
             }
           }
           
