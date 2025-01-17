@@ -111,15 +111,10 @@ jobs:
           
           # 创建图片处理模板
           cat > layouts/_default/_markup/render-image.html <<EOL
-          {{ \$image := .Page.Resources.GetMatch (printf "images/%s" (.Destination | urlize)) }}
-          {{ if \$image }}
-            <figure class="zoom-img">
-              <img src="{{ \$image.RelPermalink }}" alt="{{ .Text }}" data-zoomable>
-              {{ if .Title }}<figcaption>{{ .Title }}</figcaption>{{ end }}
-            </figure>
-          {{ else }}
-            <img src="{{ .Destination }}" alt="{{ .Text }}" data-zoomable>
-          {{ end }}
+          <figure class="zoom-img">
+            <img src="{{ .Destination | safeURL }}" alt="{{ .Text }}" data-zoomable>
+            {{ if .Title }}<figcaption>{{ .Title }}</figcaption>{{ end }}
+          </figure>
           EOL
           
           # 更新扩展头部
@@ -280,20 +275,16 @@ jobs:
                 mkdir -p "content/posts/${category}"
               fi
               
-              # 创建图片存储目录
-              img_dir="static/images/${category}"
-              mkdir -p "$img_dir"
-              
               # 创建临时文件处理图片链接
               temp_file=$(mktemp)
               
-              # 如果没有 front matter，添加它
+              # 处理 front matter
               if ! grep -q "^---" "$file"; then
                 echo "---" > "$temp_file"
                 echo "title: \"$(basename "$file" .md)\"" >> "$temp_file"
                 echo "date: $(git log -1 --format=%aI -- "$file")" >> "$temp_file"
                 echo "draft: false" >> "$temp_file"
-                echo "toc: true" >> "$temp_file"          # 启用目录
+                echo "toc: true" >> "$temp_file"
                 echo "categories: [\"$category\"]" >> "$temp_file"
                 case "$category" in
                   "github")
@@ -326,13 +317,12 @@ jobs:
                     img_ext="png"
                   fi
                   
-                  # 下载图片到 page bundle
-                  page_dir="content/posts/${category}"
-                  mkdir -p "$page_dir/images"
-                  wget -q "$img_url" -O "$page_dir/images/${img_filename}.${img_ext}" || true
+                  # 下载图片到 static/images 目录
+                  mkdir -p "static/images/${category}"
+                  wget -q "$img_url" -O "static/images/${category}/${img_filename}.${img_ext}" || true
                   
-                  # 更新图片链接为相对路径
-                  echo "![${img_alt}](images/${img_filename}.${img_ext})" >> "$temp_file"
+                  # 更新图片链接
+                  echo "![${img_alt}](/Articles/images/${category}/${img_filename}.${img_ext})" >> "$temp_file"
                 else
                   echo "$line" >> "$temp_file"
                 fi
