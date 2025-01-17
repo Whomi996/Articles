@@ -154,7 +154,7 @@ jobs:
           mkdir -p content/posts
           mkdir -p content/search
           
-          # 创建搜索页
+          # 创建搜索页和归档页
           cat > content/search.md <<EOL
           ---
           title: "搜索" 
@@ -162,7 +162,6 @@ jobs:
           ---
           EOL
           
-          # 创建归档页
           cat > content/archives.md <<EOL
           ---
           title: "归档"
@@ -181,11 +180,14 @@ jobs:
               fi
               
               dir_path=$(dirname "$file")
+              category=$(basename "$dir_path")
+              
               if [ "$dir_path" = "." ]; then
                 target="content/posts/$filename"
+                category="未分类"
               else
-                target="content/${dir_path#./}/$filename"
-                mkdir -p "content/${dir_path#./}"
+                target="content/posts/${category}/$filename"
+                mkdir -p "content/posts/${category}"
               fi
               
               # 添加或更新 front matter
@@ -197,11 +199,44 @@ jobs:
                 echo "title: \"$title\"" >> "$temp_file"
                 echo "date: $date" >> "$temp_file"
                 echo "draft: false" >> "$temp_file"
+                echo "categories: [\"$category\"]" >> "$temp_file"
+                # 根据文件夹名添加标签
+                case "$category" in
+                  "github")
+                    echo "tags: [\"GitHub\", \"工作流\"]" >> "$temp_file"
+                    ;;
+                  "从0开始做增长")
+                    echo "tags: [\"增长\", \"营销\", \"学习笔记\"]" >> "$temp_file"
+                    ;;
+                  "AI大模型实战端手课")
+                    echo "tags: [\"AI\", \"大模型\", \"实战\"]" >> "$temp_file"
+                    ;;
+                  *)
+                    echo "tags: []" >> "$temp_file"
+                    ;;
+                esac
                 echo "---" >> "$temp_file"
                 cat "$file" >> "$temp_file"
                 mv "$temp_file" "$target"
               else
-                cp "$file" "$target"
+                # 如果已有 front matter，保留原有的并添加分类
+                temp_file=$(mktemp)
+                awk '
+                  BEGIN {front_matter=0; categories_added=0; tags_added=0}
+                  /^---/ {
+                    if (front_matter == 0) {
+                      front_matter=1
+                      print "---"
+                      next
+                    }
+                  }
+                  front_matter == 1 && !categories_added && !/^categories:/ && !/^---/ {
+                    printf "categories: [\"%s\"]\n", "'$category'"
+                    categories_added=1
+                  }
+                  {print}
+                ' "$file" > "$temp_file"
+                mv "$temp_file" "$target"
               fi
             fi
           done
