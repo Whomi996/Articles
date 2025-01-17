@@ -33,8 +33,95 @@ jobs:
         id: pages
         uses: actions/configure-pages@v4
 
-      - name: Install theme
-        run: git clone --depth 1 https://github.com/adityatelange/hugo-PaperMod.git themes/PaperMod
+      - name: Install theme and setup assets
+        run: |
+          # 安装主题
+          git clone --depth 1 https://github.com/adityatelange/hugo-PaperMod.git themes/PaperMod
+          
+          # 创建必要的目录
+          mkdir -p assets/css/extended
+          mkdir -p layouts/partials
+          mkdir -p layouts/shortcodes
+          mkdir -p static/fonts
+          
+          # 下载并安装霞鹜文楷字体
+          wget -O static/fonts/lxgwwenkaiscreen.subset.v1.235.standard.woff2 https://github.com/lxgw/LxgwWenKai-Lite/releases/download/v1.235/LXGWWenKaiLite-Regular.ttf
+          
+          # 创建扩展 CSS 文件
+          cat > assets/css/extended/custom.css <<EOL
+          /* 自定义字体 */
+          @font-face {
+            font-family: "LXGWWenKaiScreenR";
+            src: url("/fonts/lxgwwenkaiscreen.subset.v1.235.standard.woff2");
+          }
+          
+          body {
+            font-family: "LXGWWenKaiScreenR", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+          }
+          
+          /* 代码样式 */
+          .post-content pre code {
+            font-family: Consolas, Monaco, "LXGWWenKaiScreenR";
+            font-size: 0.9em;
+            background: var(--hljs-bg) !important;
+          }
+          
+          /* 表格样式 */
+          table {
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+            width: 100%;
+            
+            & thead th {
+              border-bottom: 2px solid var(--border);
+            }
+            
+            & tbody tr:hover {
+              background-color: var(--code-bg);
+            }
+          }
+          
+          /* 引用块样式 */
+          blockquote {
+            position: relative;
+            margin: 1em auto;
+            padding-left: 3em;
+            border: none;
+            
+            &::before {
+              position: absolute;
+              left: 0;
+              content: """;
+              font-size: 3em;
+              font-weight: bold;
+              line-height: 1;
+            }
+          }
+          
+          /* 图片样式 */
+          .post-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 1rem auto;
+            display: block;
+          }
+          EOL
+          
+          # 创建图片点击放大功能
+          cat > layouts/partials/extend_head.html <<EOL
+          <!-- Fancybox -->
+          <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+          <script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script>
+          
+          <!-- 盘古之白 -->
+          <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js"></script>
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              pangu.spacingPage();
+            });
+          </script>
+          EOL
 
       - name: Create Hugo config
         run: |
@@ -44,22 +131,11 @@ jobs:
           title: Articles
           theme: PaperMod
           
+          enableGitInfo: true
           enableRobotsTXT: true
-          buildDrafts: false
-          buildFuture: false
-          buildExpired: false
           
-          minify:
-            disableXML: true
-            minifyOutput: true
-            
           params:
             env: production
-            title: Articles
-            description: "个人文章收集"
-            keywords: [Blog, Portfolio, Articles]
-            author: whomi996
-            DateFormat: "2006-01-02"
             defaultTheme: auto
             ShowReadingTime: true
             ShowShareButtons: true
@@ -68,33 +144,8 @@ jobs:
             ShowCodeCopyButtons: true
             ShowWordCount: true
             ShowRssButtonInSectionTermList: true
-            UseHugoToc: true
-            disableSpecial1stPost: false
-            disableScrollToTop: false
-            comments: false
-            hidemeta: false
-            hideSummary: false
-            showtoc: true
-            tocopen: false
+            ShowLastMod: true
             
-            assets:
-              disableHLJS: true
-              favicon: "<link / abs url>"
-              favicon16x16: "<link / abs url>"
-              favicon32x32: "<link / abs url>"
-              apple_touch_icon: "<link / abs url>"
-              safari_pinned_tab: "<link / abs url>"
-              
-            label:
-              text: "Home"
-              iconHeight: 35
-              
-            profileMode:
-              enabled: false
-              title: Articles
-              imageUrl: "#"
-              imageTitle: my image
-              
             homeInfoParams:
               Title: "Hi there 👋"
               Content: Welcome to my blog
@@ -103,16 +154,14 @@ jobs:
               - name: github
                 url: "https://github.com/whomi996"
                 
-            cover:
-              hidden: false
-              hiddenInList: false
-              hiddenInSingle: false
+            assets:
+              disableHLJS: true
+              favicon: "/favicon.ico"
               
-            editPost:
-              URL: "https://github.com/whomi996/Articles/content"
-              Text: "Suggest Changes"
-              appendFilePath: true
-            
+            cover:
+              responsiveImages: true
+              linkFullImages: true
+              
           menu:
             main:
               - identifier: archives
@@ -132,21 +181,17 @@ jobs:
                 url: /search/
                 weight: 40
                 
-          # for search
-          outputs:
-            home:
-              - HTML
-              - RSS
-              - JSON
-              
           markup:
             highlight:
               noClasses: false
-              anchorLineNos: true
               codeFences: true
               guessSyntax: true
               lineNos: true
               style: monokai
+              
+            goldmark:
+              renderer:
+                unsafe: true
           EOL
 
       - name: Setup content structure
