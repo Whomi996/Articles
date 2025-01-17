@@ -42,7 +42,9 @@ jobs:
           mkdir -p assets/css/extended
           mkdir -p layouts/partials
           mkdir -p layouts/shortcodes
+          mkdir -p layouts/_default/_markup
           mkdir -p static/fonts
+          mkdir -p static/images
           
           # 下载并安装霞鹜文楷字体
           wget -O static/fonts/lxgwwenkaiscreen.subset.v1.235.standard.woff2 https://github.com/lxgw/LxgwWenKai-Lite/releases/download/v1.235/LXGWWenKaiLite-Regular.ttf
@@ -107,31 +109,29 @@ jobs:
           }
           EOL
           
-          # 创建图片处理脚本
+          # 创建图片处理模板
           cat > layouts/_default/_markup/render-image.html <<EOL
-          {{ if .Title }}
-          <figure>
-            <a href="{{ .Destination | safeURL }}" data-fancybox="gallery" data-caption="{{ .Text }}">
-              <img src="{{ .Destination | safeURL }}" alt="{{ .Text }}" {{ with .Title }} title="{{ . }}"{{ end }} />
-            </a>
-            <figcaption>{{ .Text }}</figcaption>
-          </figure>
+          {{ \$image := .Page.Resources.GetMatch (printf "images/%s" (.Destination | urlize)) }}
+          {{ if \$image }}
+            <figure class="zoom-img">
+              <img src="{{ \$image.RelPermalink }}" alt="{{ .Text }}" data-zoomable>
+              {{ if .Title }}<figcaption>{{ .Title }}</figcaption>{{ end }}
+            </figure>
           {{ else }}
-          <a href="{{ .Destination | safeURL }}" data-fancybox="gallery" data-caption="{{ .Text }}">
-            <img src="{{ .Destination | safeURL }}" alt="{{ .Text }}" {{ with .Title }} title="{{ . }}"{{ end }} />
-          </a>
+            <img src="{{ .Destination }}" alt="{{ .Text }}" data-zoomable>
           {{ end }}
           EOL
           
           # 更新扩展头部
           cat > layouts/partials/extend_head.html <<EOL
-          <!-- Fancybox -->
-          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css"/>
-          <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+          <!-- Medium Zoom -->
+          <script src="https://cdn.jsdelivr.net/npm/medium-zoom/dist/medium-zoom.min.js"></script>
           <script>
             document.addEventListener('DOMContentLoaded', () => {
-              Fancybox.bind('[data-fancybox]', {
-                // 配置项
+              mediumZoom('[data-zoomable]', {
+                margin: 24,
+                background: 'rgba(0,0,0,0.8)',
+                scrollOffset: 0,
               });
             });
           </script>
@@ -143,6 +143,36 @@ jobs:
               pangu.spacingPage();
             });
           </script>
+          
+          <style>
+            /* 图片悬停效果 */
+            [data-zoomable] {
+              cursor: zoom-in;
+              transition: transform 0.2s ease-in-out;
+            }
+            
+            [data-zoomable]:hover {
+              transform: scale(1.02);
+            }
+            
+            /* 图片容器样式 */
+            .zoom-img {
+              margin: 2rem 0;
+              text-align: center;
+            }
+            
+            .zoom-img img {
+              max-width: 100%;
+              height: auto;
+              border-radius: 4px;
+            }
+            
+            .zoom-img figcaption {
+              margin-top: 0.5rem;
+              color: var(--secondary);
+              font-size: 0.9em;
+            }
+          </style>
           EOL
 
       - name: Create Hugo config
@@ -296,11 +326,13 @@ jobs:
                     img_ext="png"
                   fi
                   
-                  # 下载图片
-                  wget -q "$img_url" -O "$img_dir/${img_filename}.${img_ext}" || true
+                  # 下载图片到 page bundle
+                  page_dir="content/posts/${category}"
+                  mkdir -p "$page_dir/images"
+                  wget -q "$img_url" -O "$page_dir/images/${img_filename}.${img_ext}" || true
                   
-                  # 更新图片链接
-                  echo "![${img_alt}](/Articles/images/${category}/${img_filename}.${img_ext})" >> "$temp_file"
+                  # 更新图片链接为相对路径
+                  echo "![${img_alt}](images/${img_filename}.${img_ext})" >> "$temp_file"
                 else
                   echo "$line" >> "$temp_file"
                 fi
