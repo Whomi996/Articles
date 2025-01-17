@@ -63,54 +63,61 @@ jobs:
           }
           
           :root {
-            --main-width: 960px;    /* 主内容区域宽度 */
-            --header-height: 60px;
-            --toc-width: 240px;     /* 目录宽度 */
+            --article-width: 650px;   /* 文章内容宽度 */
+            --toc-width: 230px;       /* 目录宽度 */
+            --gap: 24px;              /* 间距 */
           }
           
-          /* 页面容器 */
-          .container {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
+          /* 文章容器 */
+          .post-single {
+            position: relative;
+            max-width: var(--article-width);
             margin: 0 auto;
-            padding: 0 15px;
-            max-width: calc(var(--main-width) + var(--toc-width) + 40px);
+            padding: 0 var(--gap);
           }
           
-          /* 左侧目录样式 */
-          .toc {
-            position: fixed;
-            left: max(20px, calc((100% - var(--main-width) - var(--toc-width) - 40px))/2);
-            top: var(--header-height);
+          /* 目录容器 */
+          .toc-container {
+            position: absolute;
+            height: 100%;
+            left: calc((var(--toc-width) + var(--gap)) * -1);
+            top: calc(var(--gap) * 2);
             width: var(--toc-width);
-            height: calc(100vh - var(--header-height) - 20px);
-            overflow-y: auto;
-            background: var(--entry);
-            border-radius: 8px;
-            padding: 1rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            font-size: 0.9em;
-            z-index: 100;
-          }
-          
-          /* 主内容区域 */
-          .main {
-            width: var(--main-width);
-            margin-left: calc(var(--toc-width) + 40px); /* 为左侧目录留出空间 */
-          }
-          
-          /* 文章内容区域样式 */
-          .post-content {
-            font-size: 1rem;
-            line-height: 1.8;
           }
           
           /* 目录样式 */
+          .toc {
+            position: sticky;
+            top: var(--gap);
+            padding: var(--gap) 0;
+            margin: 0 2px 40px 2px;
+            border: 1px solid var(--border);
+            background: var(--entry);
+            border-radius: var(--radius);
+            padding: 0.4em;
+          }
+          
+          .toc .inner {
+            margin: 0 0 0 20px;
+            padding: 0px 15px 15px 20px;
+            font-size: 16px;
+            
+            /* 目录显示高度 */
+            max-height: 83vh;
+            overflow-y: auto;
+          }
+          
+          .toc .inner::-webkit-scrollbar-thumb {
+            /* 滚动条 */
+            background: var(--border);
+            border: 7px solid var(--theme);
+            border-radius: var(--radius);
+          }
+          
           .toc details {
-            border-left: 2px solid var(--border);
             margin-left: 0.5rem;
             padding-left: 0.5rem;
+            border-left: 2px solid var(--border);
           }
           
           .toc summary {
@@ -119,8 +126,9 @@ jobs:
           }
           
           .toc li {
-            margin: 0.3rem 0;
             list-style: none;
+            font-size: 0.95rem;
+            padding-bottom: 5px;
           }
           
           .toc a {
@@ -135,73 +143,26 @@ jobs:
             display: inline-block;
           }
           
+          .toc .active {
+            font-size: 110%;
+            font-weight: 600;
+            color: var(--primary);
+            text-decoration: underline;
+          }
+          
           /* 移动设备适配 */
-          @media screen and (max-width: 1400px) {
-            .container {
-              flex-direction: column;
-              max-width: var(--main-width);
+          @media screen and (max-width: 1300px) {
+            .toc-container {
+              display: none;  /* 在小屏幕上隐藏目录 */
             }
             
-            .toc {
-              position: relative;
-              left: 0;
-              width: 100%;
-              height: auto;
-              margin-bottom: 2rem;
-            }
-            
-            .main {
-              width: 100%;
-              margin-left: 0;
+            .post-single {
+              max-width: var(--article-width);
+              margin: 0 auto;
             }
           }
           
           /* 其他样式保持不变 */
-          .post-content pre code {
-            font-family: Consolas, Monaco, "LXGWWenKaiScreenR";
-            font-size: 0.9em;
-            background: var(--hljs-bg) !important;
-          }
-          
-          /* 表格样式 */
-          table {
-            border-collapse: collapse;
-            margin-bottom: 1rem;
-            width: 100%;
-            
-            & thead th {
-              border-bottom: 2px solid var(--border);
-            }
-            
-            & tbody tr:hover {
-              background-color: var(--code-bg);
-            }
-          }
-          
-          /* 引用块样式 */
-          blockquote {
-            position: relative;
-            margin: 1em auto;
-            padding-left: 3em;
-            border: none;
-            
-            &::before {
-              position: absolute;
-              left: 0;
-              content: """;
-              font-size: 3em;
-              font-weight: bold;
-              line-height: 1;
-            }
-          }
-          
-          /* 图片样式 */
-          .post-content img {
-            max-width: 100%;
-            height: auto;
-            margin: 1rem auto;
-            display: block;
-          }
           EOL
           
           # 创建图片处理模板
