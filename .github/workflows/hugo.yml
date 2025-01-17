@@ -63,50 +63,86 @@ jobs:
           }
           
           :root {
-            --main-width: 720px;    /* 减小主内容区域宽度 */
+            --main-width: 960px;    /* 增加主内容区域宽度 */
             --header-height: 60px;
+            --toc-width: 240px;     /* 目录宽度 */
           }
           
           .main {
             max-width: var(--main-width);
-            margin: 0 auto;          /* 居中对齐 */
+            margin: 0 auto;
             padding: 0 15px;
+            display: flex;          /* 使用 flex 布局 */
+            gap: 40px;             /* 元素间距 */
           }
           
           /* 左侧目录样式 */
           .toc {
-            position: fixed;
-            left: calc((100% - var(--main-width))/2 - 250px);  /* 调整左侧定位 */
+            position: sticky;       /* 使用 sticky 定位 */
             top: var(--header-height);
-            width: 240px;
-            max-height: calc(100vh - var(--header-height) - 20px);
+            width: var(--toc-width);
+            height: calc(100vh - var(--header-height) - 20px);
             overflow-y: auto;
+            flex-shrink: 0;        /* 防止目录被压缩 */
             background: var(--entry);
             border-radius: 8px;
             padding: 1rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             font-size: 0.9em;
-            z-index: 100;
           }
           
-          /* 移动设备适配 */
-          @media screen and (max-width: 1400px) {  /* 增加断点宽度 */
-            .toc {
-              display: none;         /* 在较窄屏幕上隐藏侧边目录 */
-            }
-            
-            .main {
-              margin: 0 auto;
-              max-width: var(--main-width);
-            }
+          .toc details {
+            border-left: 2px solid var(--border);
+            margin-left: 0.5rem;
+            padding-left: 0.5rem;
+          }
+          
+          .toc summary {
+            cursor: pointer;
+            margin-bottom: 0.2rem;
+          }
+          
+          .toc li {
+            margin: 0.3rem 0;
+            list-style: none;
+          }
+          
+          .toc a {
+            color: var(--secondary);
+            text-decoration: none;
+            transition: all 0.3s;
+          }
+          
+          .toc a:hover {
+            color: var(--primary);
+            transform: translateX(4px);
+            display: inline-block;
           }
           
           /* 文章内容区域样式 */
           .post-content {
-            margin: 0 auto;
+            flex-grow: 1;         /* 让内容区域占据剩余空间 */
+            min-width: 0;         /* 防止内容溢出 */
             font-size: 1rem;
             line-height: 1.8;
-            max-width: 100%;
+          }
+          
+          /* 移动设备适配 */
+          @media screen and (max-width: 1400px) {
+            :root {
+              --main-width: 720px;  /* 在小屏幕上减小宽度 */
+            }
+            
+            .main {
+              flex-direction: column;  /* 改为垂直布局 */
+            }
+            
+            .toc {
+              position: relative;
+              width: 100%;
+              height: auto;
+              margin-bottom: 2rem;
+            }
           }
           
           /* 其他样式保持不变 */
