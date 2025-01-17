@@ -153,25 +153,24 @@ jobs:
         run: |
           mkdir -p content/posts
           mkdir -p content/search
+          mkdir -p static/images
           
-          # 创建搜索页和归档页
-          cat > content/search.md <<EOL
-          ---
-          title: "搜索" 
-          layout: "search"
-          ---
-          EOL
+          # 处理图片文件
+          find . -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.gif" \) -not -path "./themes/*" -not -path "./content/*" -not -path "./static/*" | while read img; do
+            if [ -f "$img" ]; then
+              dir_path=$(dirname "$img")
+              img_name=$(basename "$img")
+              if [ "$dir_path" = "." ]; then
+                target_dir="static/images"
+              else
+                target_dir="static/images/${dir_path#./}"
+              fi
+              mkdir -p "$target_dir"
+              cp "$img" "$target_dir/$img_name"
+            fi
+          done
           
-          cat > content/archives.md <<EOL
-          ---
-          title: "归档"
-          layout: "archives"
-          url: "/archives"
-          summary: archives
-          ---
-          EOL
-          
-          # 处理 Markdown 文件
+          # 处理 Markdown 文件并更新图片链接
           find . -name "*.md" -not -path "./themes/*" -not -path "./archetypes/*" -not -path "./content/*" | while read file; do
             if [ -f "$file" ]; then
               filename=$(basename "$file")
@@ -190,17 +189,16 @@ jobs:
                 mkdir -p "content/posts/${category}"
               fi
               
-              # 添加或更新 front matter
+              # 创建临时文件处理图片链接
+              temp_file=$(mktemp)
+              
+              # 如果没有 front matter，添加它
               if ! grep -q "^---" "$file"; then
-                title=$(basename "$file" .md)
-                date=$(git log -1 --format=%aI -- "$file")
-                temp_file=$(mktemp)
                 echo "---" > "$temp_file"
-                echo "title: \"$title\"" >> "$temp_file"
-                echo "date: $date" >> "$temp_file"
+                echo "title: \"$(basename "$file" .md)\"" >> "$temp_file"
+                echo "date: $(git log -1 --format=%aI -- "$file")" >> "$temp_file"
                 echo "draft: false" >> "$temp_file"
                 echo "categories: [\"$category\"]" >> "$temp_file"
-                # 根据文件夹名添加标签
                 case "$category" in
                   "github")
                     echo "tags: [\"GitHub\", \"工作流\"]" >> "$temp_file"
@@ -216,13 +214,13 @@ jobs:
                     ;;
                 esac
                 echo "---" >> "$temp_file"
-                cat "$file" >> "$temp_file"
-                mv "$temp_file" "$target"
+                
+                # 处理文件内容中的图片链接
+                sed 's/!\[\([^]]*\)\](\([^)]*\))/!\[\1\](\/Articles\/images\/\2)/g' "$file" >> "$temp_file"
               else
-                # 如果已有 front matter，保留原有的并添加分类
-                temp_file=$(mktemp)
+                # 如果已有 front matter，保留它并更新分类
                 awk '
-                  BEGIN {front_matter=0; categories_added=0; tags_added=0}
+                  BEGIN {front_matter=0; categories_added=0}
                   /^---/ {
                     if (front_matter == 0) {
                       front_matter=1
@@ -235,9 +233,10 @@ jobs:
                     categories_added=1
                   }
                   {print}
-                ' "$file" > "$temp_file"
-                mv "$temp_file" "$target"
+                ' "$file" | sed 's/!\[\([^]]*\)\](\([^)]*\))/!\[\1\](\/Articles\/images\/\2)/g' > "$temp_file"
               fi
+              
+              mv "$temp_file" "$target"
             fi
           done
 
