@@ -250,7 +250,6 @@ jobs:
           enableGitInfo: true
           enableRobotsTXT: true
           
-          # 启用搜索功能
           outputs:
             home:
               - HTML
@@ -278,21 +277,7 @@ jobs:
             socialIcons:
               - name: github
                 url: "https://github.com/whomi996"
-                
-            assets:
-              disableHLJS: true
-              favicon: "/favicon.ico"
-              
-            cover:
-              responsiveImages: true
-              linkFullImages: true
-              
-            toc:
-              enabled: true
-              position: "left"
-              collapsible: true
-              depth: 3
-              
+          
           menu:
             main:
               - identifier: archives
@@ -311,105 +296,7 @@ jobs:
                 name: 搜索
                 url: /search/
                 weight: 40
-                
-          markup:
-            highlight:
-              noClasses: false
-              codeFences: true
-              guessSyntax: true
-              lineNos: true
-              style: monokai
-              
-            goldmark:
-              renderer:
-                unsafe: true
-            tableOfContents:
-              endLevel: 4
-              ordered: false
-              startLevel: 2
           EOL
-
-      - name: Setup content structure
-        run: |
-          mkdir -p content/posts
-          mkdir -p content/search
-          mkdir -p static/images
-          
-          # 处理 Markdown 文件并下载图片
-          find . -name "*.md" -not -path "./themes/*" -not -path "./archetypes/*" -not -path "./content/*" | while read file; do
-            if [ -f "$file" ]; then
-              filename=$(basename "$file")
-              if [ "$filename" = "README.md" ]; then
-                continue
-              fi
-              
-              dir_path=$(dirname "$file")
-              category=$(basename "$dir_path")
-              
-              if [ "$dir_path" = "." ]; then
-                target="content/posts/$filename"
-                category="未分类"
-              else
-                target="content/posts/${category}/$filename"
-                mkdir -p "content/posts/${category}"
-              fi
-              
-              # 创建临时文件处理图片链接
-              temp_file=$(mktemp)
-              
-              # 处理 front matter
-              if ! grep -q "^---" "$file"; then
-                echo "---" > "$temp_file"
-                echo "title: \"$(basename "$file" .md)\"" >> "$temp_file"
-                echo "date: $(git log -1 --format=%aI -- "$file")" >> "$temp_file"
-                echo "draft: false" >> "$temp_file"
-                echo "toc: true" >> "$temp_file"
-                echo "categories: [\"$category\"]" >> "$temp_file"
-                case "$category" in
-                  "github")
-                    echo "tags: [\"GitHub\", \"工作流\"]" >> "$temp_file"
-                    ;;
-                  "从0开始做增长")
-                    echo "tags: [\"增长\", \"营销\", \"学习笔记\"]" >> "$temp_file"
-                    ;;
-                  "AI大模型实战端手课")
-                    echo "tags: [\"AI\", \"大模型\", \"实战\"]" >> "$temp_file"
-                    ;;
-                  *)
-                    echo "tags: []" >> "$temp_file"
-                    ;;
-                esac
-                echo "---" >> "$temp_file"
-              fi
-              
-              # 处理文件内容，下载图片并更新链接
-              while IFS= read -r line; do
-                if echo "$line" | grep -q '!\[.*\](http'; then
-                  # 提取图片URL和替代文本
-                  img_url=$(echo "$line" | sed -n 's/.*\](\([^)]*\)).*/\1/p')
-                  img_alt=$(echo "$line" | sed -n 's/!\[\([^]]*\)\].*/\1/p')
-                  
-                  # 生成唯一的图片文件名
-                  img_filename=$(echo "$img_url" | md5sum | cut -d' ' -f1)
-                  img_ext=$(echo "$img_url" | sed -n 's/.*\.\([^.?]*\).*/\1/p')
-                  if [ -z "$img_ext" ]; then
-                    img_ext="png"
-                  fi
-                  
-                  # 下载图片到 static/images 目录
-                  mkdir -p "static/images/${category}"
-                  wget -q "$img_url" -O "static/images/${category}/${img_filename}.${img_ext}" || true
-                  
-                  # 更新图片链接
-                  echo "![${img_alt}](/Articles/images/${category}/${img_filename}.${img_ext})" >> "$temp_file"
-                else
-                  echo "$line" >> "$temp_file"
-                fi
-              done < "$file"
-              
-              mv "$temp_file" "$target"
-            fi
-          done
 
       - name: Create required pages
         run: |
