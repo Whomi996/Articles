@@ -1,0 +1,142 @@
+# Hugo PaperMod 博客配置指南
+
+# 一、快速开始
+快速部署:
+  1. 复制仓库:
+     - 点击 "Use this template"
+     - 仓库名改为: 你的用户名.github.io
+     - 选择 "Create repository"
+  
+  2. 修改配置:
+     需要修改的文件: config.yml
+     ```yaml
+     baseURL: 'https://你的用户名.github.io/Articles/'  # 改成你的地址
+     title: "你的博客名称"                             # 改成你想要的博客名称
+     
+     params:
+       homeInfoParams:
+         Title: "你的主页标题"       # 首页显示的标题
+         Content: "你的主页描述"     # 首页显示的内容
+       
+       socialIcons:
+         - name: github
+           url: "你的GitHub主页"     # 改成你的 GitHub 链接
+     ```
+
+# 二、写作指南
+创建文章:
+  1. 位置:
+     - 在 content/posts 目录下创建 .md 文件
+     - 或者在分类目录下创建: content/posts/分类名/文章.md
+  
+  2. 文章头部:
+     ```yaml
+     ---
+     title: "文章标题"
+     date: 2024-01-17    # 发布日期
+     draft: false        # 是否为草稿
+     toc: true          # 是否显示目录
+     categories: ["分类名"]
+     tags: ["标签1", "标签2"]
+     ---
+     ```
+
+# 三、添加图片
+图片配置:
+  1. 存放位置:
+     - 将图片放在: static/images/分类名/ 目录下
+  
+  2. 引用方式:
+     ```markdown
+     ![图片描述](/Articles/images/分类名/图片名.jpg)
+     ```
+  
+  3. 图片功能:
+     - 自动支持点击放大
+     - 自动适应屏幕大小
+     - 支持图片描述
+
+# 四、自定义样式
+样式修改:
+  1. 修改主题色:
+     文件位置: assets/css/extended/custom.css
+     ```css
+     :root {
+       --main-width: 1024px;    # 修改主容器宽度
+       --article-width: 750px;  # 修改文章宽度
+       --toc-width: 280px;     # 修改目录宽度
+     }
+     ```
+  
+  2. 修改字体:
+     - 默认使用霞鹜文楷
+     - 如需更换，替换 static/fonts 下的字体文件
+     - 更新 custom.css 中的字体配置
+
+# 五、分类与标签
+分类管理:
+  1. 预设分类:
+     - github: 适用于 GitHub 相关文章
+     - 从0开始做增长: 适用于增长相关文章
+     - AI大模型实战端手课: 适用于 AI 相关文章
+  
+  2. 添加新分类:
+     - 直接在文章中使用新分类名
+     - 系统会自动创建分类页面
+
+# 六、部署检查
+部署步骤:
+  1. 确认仓库设置:
+     - 仓库必须是公开的
+     - 名称必须是: 用户名.github.io
+  
+  2. 检查 Pages 设置:
+     - Settings > Pages
+     - Source 选择 GitHub Actions
+  
+  3. 等待部署:
+     - 提交更改后自动部署
+     - 在 Actions 标签页查看进度
+
+# 七、常见修改
+常用修改:
+  1. 修改博客图标:
+     - 准备 favicon.ico 文件
+     - 放在 static 目录下
+  
+  2. 修改导航菜单:
+     在 config.yml 中修改:
+     ```yaml
+     menu:
+       main:
+         - name: 归档
+           url: /archives/
+           weight: 10
+         - name: 分类
+           url: /categories/
+           weight: 20
+     ```
+  
+  3. 修改首页信息:
+     在 config.yml 中修改:
+     ```yaml
+     params:
+       homeInfoParams:
+         Title: "新的标题"
+         Content: "新的描述"
+     ```
+
+# 八、注意事项
+重要提示:
+  1. 文件命名:
+     - 不要使用中文命名文件
+     - 不要使用特殊字符
+  
+  2. 图片引用:
+     - 必须使用相对路径
+     - 路径前必须加 /Articles
+  
+  3. 部署问题:
+     - 确保 main 分支存在
+     - 确保有写入权限
+     - 检查 Actions 权限是否开启
