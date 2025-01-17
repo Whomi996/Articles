@@ -39,111 +39,37 @@ jobs:
           # 创建 Hugo 站点配置
           cat > config.toml <<EOL
           baseURL = 'https://whomi996.github.io/Articles/'
-          # 后续如果要自定义域名需要改为baseURL = 'https://example.com/'
           languageCode = 'zh-cn'
           title = 'Articles'
-          theme = 'paper'
+          theme = 'meme'
+          
+          # MemE 主题的必要配置
+          enableGitInfo = true
           
           [params]
-            github = 'whomi996'
-            rss = true
-            color = 'linen'
+            version = "2.x"
+            defaultTheme = "light"
+            gitRepo = "https://github.com/whomi996/Articles"
             
-          [taxonomies]
-            category = 'categories'
-            tag = 'tags'
+            # 显示菜单栏
+            enableMenu = true
+            
+            # 显示文章的目录
+            enableToc = true
+            
+            # 显示返回顶部按钮
+            enableBackToTop = true
             
           [markup.goldmark.renderer]
             unsafe = true
           EOL
           
-          # 下载并设置主题
-          git clone https://github.com/nanxiaobei/hugo-paper themes/paper
-          
-          # 创建自定义主页模板
-          mkdir -p layouts
-          cat > layouts/index.html <<EOL
-          {{ define "main" }}
-          <article class="post-single">
-            <div class="post-content">
-              <!-- 按文件夹结构显示文章 -->
-              {{ \$pages := .Site.RegularPages }}
-              {{ \$sections := slice }}
-              {{ range \$pages }}
-                {{ \$section := path.Dir .File.Path }}
-                {{ if and (ne \$section ".") (ne \$section "posts") }}
-                  {{ if not (in \$sections \$section) }}
-                    {{ \$sections = \$sections | append \$section }}
-                  {{ end }}
-                {{ end }}
-              {{ end }}
-              
-              <!-- 首先显示根目录文章 -->
-              {{ \$rootPages := where \$pages "File.Dir" "posts/" }}
-              {{ if \$rootPages }}
-              <div class="folder">
-                <ul>
-                  {{ range sort \$rootPages "Title" }}
-                    <li>
-                      <a href="{{ .Permalink }}">{{ .Title }}</a>
-                    </li>
-                  {{ end }}
-                </ul>
-              </div>
-              {{ end }}
-              
-              <!-- 然后显示其他文件夹 -->
-              {{ range sort \$sections }}
-                {{ \$section := . }}
-                <div class="folder">
-                  <h3>📁 {{ . }}</h3>
-                  <ul>
-                    {{ range sort (\$pages.ByTitle) }}
-                      {{ if eq (path.Dir .File.Path) \$section }}
-                        <li>
-                          <a href="{{ .Permalink }}">{{ .Title }}</a>
-                        </li>
-                      {{ end }}
-                    {{ end }}
-                  </ul>
-                </div>
-              {{ end }}
-            </div>
-          </article>
-          
-          <style>
-          .folder {
-            margin-bottom: 1.5rem;
-            border-radius: var(--radius);
-            background: var(--secondary);
-          }
-          .folder h3 {
-            margin: 0;
-            padding: 1rem;
-            font-size: 1.1rem;
-            border-bottom: 1px solid var(--border);
-          }
-          .folder ul {
-            list-style: none;
-            padding: 1rem;
-            margin: 0;
-          }
-          .folder li {
-            margin: 0.5rem 0;
-          }
-          .folder li a {
-            text-decoration: none;
-            color: var(--primary);
-          }
-          .folder li a:hover {
-            text-decoration: underline;
-          }
-          </style>
-          {{ end }}
-          EOL
+          # 下载并设置 MemE 主题
+          git clone --depth 1 https://github.com/reuixiy/hugo-theme-meme.git themes/meme
           
           # 创建内容目录结构
-          mkdir -p content
+          mkdir -p content/posts
+          mkdir -p content/about
           
           # 移动并组织 Markdown 文件
           find . -name "*.md" -not -path "./themes/*" -not -path "./archetypes/*" -not -path "./content/*" -not -path "./layouts/*" | while read file; do
