@@ -62,17 +62,24 @@ jobs:
             src: url("/Articles/fonts/lxgwwenkaiscreen.subset.v1.235.standard.woff2");
           }
           
-          body {
-            font-family: "LXGWWenKaiScreenR", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+          :root {
+            --main-width: 720px;    /* 减小主内容区域宽度 */
+            --header-height: 60px;
+          }
+          
+          .main {
+            max-width: var(--main-width);
+            margin: 0 auto;          /* 居中对齐 */
+            padding: 0 15px;
           }
           
           /* 左侧目录样式 */
           .toc {
             position: fixed;
-            left: 1rem;
-            top: 5rem;
+            left: calc((100% - var(--main-width))/2 - 250px);  /* 调整左侧定位 */
+            top: var(--header-height);
             width: 240px;
-            max-height: calc(100vh - 6rem);
+            max-height: calc(100vh - var(--header-height) - 20px);
             overflow-y: auto;
             background: var(--entry);
             border-radius: 8px;
@@ -82,54 +89,24 @@ jobs:
             z-index: 100;
           }
           
-          .toc details {
-            border-left: 2px solid var(--border);
-            margin-left: 0.5rem;
-            padding-left: 0.5rem;
-          }
-          
-          .toc summary {
-            cursor: pointer;
-            margin-bottom: 0.2rem;
-          }
-          
-          .toc li {
-            margin: 0.3rem 0;
-            list-style: none;
-          }
-          
-          .toc a {
-            color: var(--secondary);
-            text-decoration: none;
-          }
-          
-          .toc a:hover {
-            color: var(--primary);
-            text-decoration: underline;
-          }
-          
-          /* 适应左侧目录的主内容区域 */
-          .main {
-            max-width: calc(var(--main-width) + 280px);
-            margin-left: 260px;
-          }
-          
           /* 移动设备适配 */
-          @media screen and (max-width: 1200px) {
+          @media screen and (max-width: 1400px) {  /* 增加断点宽度 */
             .toc {
-              position: relative;
-              left: 0;
-              top: 0;
-              width: 100%;
-              max-height: none;
-              margin-bottom: 2rem;
-              box-shadow: none;
+              display: none;         /* 在较窄屏幕上隐藏侧边目录 */
             }
             
             .main {
-              margin-left: auto;
+              margin: 0 auto;
               max-width: var(--main-width);
             }
+          }
+          
+          /* 文章内容区域样式 */
+          .post-content {
+            margin: 0 auto;
+            font-size: 1rem;
+            line-height: 1.8;
+            max-width: 100%;
           }
           
           /* 其他样式保持不变 */
