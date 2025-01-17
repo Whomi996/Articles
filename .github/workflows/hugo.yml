@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Install Hugo CLI
         run: |
-          wget -O ${{ runner.temp }}/hugo.deb https://github.com/gohugoio/hugo/releases/download/v0.74.3/hugo_extended_0.74.3_linux-amd64.deb \
+          wget -O ${{ runner.temp }}/hugo.deb https://github.com/gohugoio/hugo/releases/download/v0.121.1/hugo_extended_0.121.1_linux-amd64.deb \
           && sudo dpkg -i ${{ runner.temp }}/hugo.deb
 
       - name: Checkout
@@ -34,81 +34,143 @@ jobs:
         uses: actions/configure-pages@v4
 
       - name: Install theme
-        run: git clone --depth 1 https://github.com/reuixiy/hugo-theme-meme.git themes/meme
+        run: git clone --depth 1 https://github.com/adityatelange/hugo-PaperMod.git themes/PaperMod
 
       - name: Create Hugo config
         run: |
-          cat > config.toml <<EOL
-          baseURL = 'https://whomi996.github.io/Articles/'
-          languageCode = 'zh-cn'
-          title = 'Articles'
-          theme = 'meme'
+          cat > config.yml <<EOL
+          baseURL: 'https://whomi996.github.io/Articles/'
+          languageCode: zh-cn
+          title: Articles
+          theme: PaperMod
           
-          enableGitInfo = true
+          enableRobotsTXT: true
+          buildDrafts: false
+          buildFuture: false
+          buildExpired: false
           
-          defaultContentLanguage = "zh"
-          defaultContentLanguageInSubdir = false
-          
-          enableRobotsTXT = true
-          
-          [languages]
-            [languages.zh]
-              languageName = "中文"
-              weight = 1
-              hasCJKLanguage = true
-          
-          [params]
-            version = "2.x"
-            defaultTheme = "light"
-            gitRepo = "https://github.com/whomi996/Articles"
+          minify:
+            disableXML: true
+            minifyOutput: true
             
-            enableMenu = true
-            enableToc = true
-            enableBackToTop = true
+          params:
+            env: production
+            title: Articles
+            description: "个人文章收集"
+            keywords: [Blog, Portfolio, Articles]
+            author: whomi996
+            DateFormat: "2006-01-02"
+            defaultTheme: auto
+            ShowReadingTime: true
+            ShowShareButtons: true
+            ShowPostNavLinks: true
+            ShowBreadCrumbs: true
+            ShowCodeCopyButtons: true
+            ShowWordCount: true
+            ShowRssButtonInSectionTermList: true
+            UseHugoToc: true
+            disableSpecial1stPost: false
+            disableScrollToTop: false
+            comments: false
+            hidemeta: false
+            hideSummary: false
+            showtoc: true
+            tocopen: false
             
-            # Post 页面配置
-            enablePostGitInfo = true
-            displayPostGitInfo = true
-            repoPostURL = "https://github.com/whomi996/Articles/blob/main/content/{{ .Path }}"
+            assets:
+              disableHLJS: true
+              favicon: "<link / abs url>"
+              favicon16x16: "<link / abs url>"
+              favicon32x32: "<link / abs url>"
+              apple_touch_icon: "<link / abs url>"
+              safari_pinned_tab: "<link / abs url>"
+              
+            label:
+              text: "Home"
+              iconHeight: 35
+              
+            profileMode:
+              enabled: false
+              title: Articles
+              imageUrl: "#"
+              imageTitle: my image
+              
+            homeInfoParams:
+              Title: "Hi there 👋"
+              Content: Welcome to my blog
+              
+            socialIcons:
+              - name: github
+                url: "https://github.com/whomi996"
+                
+            cover:
+              hidden: false
+              hiddenInList: false
+              hiddenInSingle: false
+              
+            editPost:
+              URL: "https://github.com/whomi996/Articles/content"
+              Text: "Suggest Changes"
+              appendFilePath: true
             
-            # 页脚配置
-            enableFooter = true
-            displayCopyrightSymbol = true
-            displaySiteCreatedYear = true
-            
-          [markup]
-            defaultMarkdownHandler = "goldmark"
-            [markup.goldmark]
-              [markup.goldmark.extensions]
-                definitionList = true
-                footnote = true
-                linkify = true
-                strikethrough = true
-                table = true
-                taskList = true
-                typographer = false
-              [markup.goldmark.parser]
-                attribute = true
-                autoHeadingID = true
-              [markup.goldmark.renderer]
-                hardWraps = false
-                unsafe = true
-                xHTML = false
-            [markup.highlight]
-              codeFences = true
-              guessSyntax = false
-              lineNos = true
-              lineNumbersInTable = true
-              noClasses = false
-            [markup.tableOfContents]
-              startLevel = 2
-              endLevel = 6
+          menu:
+            main:
+              - identifier: archives
+                name: 归档
+                url: /archives/
+                weight: 10
+              - identifier: categories
+                name: 分类
+                url: /categories/
+                weight: 20
+              - identifier: tags
+                name: 标签
+                url: /tags/
+                weight: 30
+              - identifier: search
+                name: 搜索
+                url: /search/
+                weight: 40
+                
+          # for search
+          outputs:
+            home:
+              - HTML
+              - RSS
+              - JSON
+              
+          markup:
+            highlight:
+              noClasses: false
+              anchorLineNos: true
+              codeFences: true
+              guessSyntax: true
+              lineNos: true
+              style: monokai
           EOL
 
       - name: Setup content structure
         run: |
           mkdir -p content/posts
-          mkdir -p content/about
+          mkdir -p content/search
+          
+          # 创建搜索页
+          cat > content/search.md <<EOL
+          ---
+          title: "搜索" 
+          layout: "search"
+          ---
+          EOL
+          
+          # 创建归档页
+          cat > content/archives.md <<EOL
+          ---
+          title: "归档"
+          layout: "archives"
+          url: "/archives"
+          summary: archives
+          ---
+          EOL
           
           # 处理 Markdown 文件
           find . -name "*.md" -not -path "./themes/*" -not -path "./archetypes/*" -not -path "./content/*" | while read file; do
