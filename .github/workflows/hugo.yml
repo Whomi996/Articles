@@ -155,22 +155,7 @@ jobs:
           mkdir -p content/search
           mkdir -p static/images
           
-          # 处理图片文件
-          find . -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.gif" \) -not -path "./themes/*" -not -path "./content/*" -not -path "./static/*" | while read img; do
-            if [ -f "$img" ]; then
-              dir_path=$(dirname "$img")
-              img_name=$(basename "$img")
-              if [ "$dir_path" = "." ]; then
-                target_dir="static/images"
-              else
-                target_dir="static/images/${dir_path#./}"
-              fi
-              mkdir -p "$target_dir"
-              cp "$img" "$target_dir/$img_name"
-            fi
-          done
-          
-          # 处理 Markdown 文件并更新图片链接
+          # 处理 Markdown 文件并下载图片
           find . -name "*.md" -not -path "./themes/*" -not -path "./archetypes/*" -not -path "./content/*" | while read file; do
             if [ -f "$file" ]; then
               filename=$(basename "$file")
@@ -188,6 +173,10 @@ jobs:
                 target="content/posts/${category}/$filename"
                 mkdir -p "content/posts/${category}"
               fi
+              
+              # 创建图片存储目录
+              img_dir="static/images/${category}"
+              mkdir -p "$img_dir"
               
               # 创建临时文件处理图片链接
               temp_file=$(mktemp)
@@ -214,27 +203,31 @@ jobs:
                     ;;
                 esac
                 echo "---" >> "$temp_file"
-                
-                # 处理文件内容中的图片链接
-                sed 's/!\[\([^]]*\)\](\([^)]*\))/!\[\1\](\/Articles\/images\/\2)/g' "$file" >> "$temp_file"
-              else
-                # 如果已有 front matter，保留它并更新分类
-                awk '
-                  BEGIN {front_matter=0; categories_added=0}
-                  /^---/ {
-                    if (front_matter == 0) {
-                      front_matter=1
-                      print "---"
-                      next
-                    }
-                  }
-                  front_matter == 1 && !categories_added && !/^categories:/ && !/^---/ {
-                    printf "categories: [\"%s\"]\n", "'$category'"
-                    categories_added=1
-                  }
-                  {print}
-                ' "$file" | sed 's/!\[\([^]]*\)\](\([^)]*\))/!\[\1\](\/Articles\/images\/\2)/g' > "$temp_file"
               fi
+              
+              # 处理文件内容，下载图片并更新链接
+              while IFS= read -r line; do
+                if echo "$line" | grep -q '!\[.*\](http'; then
+                  # 提取图片URL和替代文本
+                  img_url=$(echo "$line" | sed -n 's/.*\](\([^)]*\)).*/\1/p')
+                  img_alt=$(echo "$line" | sed -n 's/!\[\([^]]*\)\].*/\1/p')
+                  
+                  # 生成唯一的图片文件名
+                  img_filename=$(echo "$img_url" | md5sum | cut -d' ' -f1)
+                  img_ext=$(echo "$img_url" | sed -n 's/.*\.\([^.?]*\).*/\1/p')
+                  if [ -z "$img_ext" ]; then
+                    img_ext="png"
+                  fi
+                  
+                  # 下载图片
+                  wget -q "$img_url" -O "$img_dir/${img_filename}.${img_ext}" || true
+                  
+                  # 更新图片链接
+                  echo "![${img_alt}](/Articles/images/${category}/${img_filename}.${img_ext})" >> "$temp_file"
+                else
+                  echo "$line" >> "$temp_file"
+                fi
+              done < "$file"
               
               mv "$temp_file" "$target"
             fi
