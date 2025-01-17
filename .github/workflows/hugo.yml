@@ -236,6 +236,615 @@ jobs:
           </style>
           EOL
 
+      - name: Install theme and setup assets
+        run: |
+          # 安装主题
+          git clone --depth 1 https://github.com/adityatelange/hugo-PaperMod.git themes/PaperMod
+          
+          # 创建必要的目录
+          mkdir -p assets/css/extended
+          mkdir -p layouts/partials
+          mkdir -p layouts/shortcodes
+          mkdir -p layouts/_default/_markup
+          mkdir -p static/fonts
+          mkdir -p static/images
+          
+          # 下载并安装霞鹜文楷字体
+          wget -O static/fonts/lxgwwenkaiscreen.subset.v1.235.standard.woff2 https://github.com/lxgw/LxgwWenKai-Lite/releases/download/v1.235/LXGWWenKaiLite-Regular.ttf
+          
+          # 创建扩展 CSS 文件
+          cat > assets/css/extended/custom.css <<EOL
+          /* 自定义字体 */
+          @font-face {
+            font-family: "LXGWWenKaiScreenR";
+            src: url("/Articles/fonts/lxgwwenkaiscreen.subset.v1.235.standard.woff2");
+          }
+          
+          body {
+            font-family: "LXGWWenKaiScreenR", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+          }
+          
+          /* 左侧目录样式 */
+          .toc {
+            position: fixed;
+            left: 1rem;
+            top: 5rem;
+            width: 240px;
+            max-height: calc(100vh - 6rem);
+            overflow-y: auto;
+            background: var(--entry);
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-size: 0.9em;
+            z-index: 100;
+          }
+          
+          .toc details {
+            border-left: 2px solid var(--border);
+            margin-left: 0.5rem;
+            padding-left: 0.5rem;
+          }
+          
+          .toc summary {
+            cursor: pointer;
+            margin-bottom: 0.2rem;
+          }
+          
+          .toc li {
+            margin: 0.3rem 0;
+            list-style: none;
+          }
+          
+          .toc a {
+            color: var(--secondary);
+            text-decoration: none;
+          }
+          
+          .toc a:hover {
+            color: var(--primary);
+            text-decoration: underline;
+          }
+          
+          /* 适应左侧目录的主内容区域 */
+          .main {
+            max-width: calc(var(--main-width) + 280px);
+            margin-left: 260px;
+          }
+          
+          /* 移动设备适配 */
+          @media screen and (max-width: 1200px) {
+            .toc {
+              position: relative;
+              left: 0;
+              top: 0;
+              width: 100%;
+              max-height: none;
+              margin-bottom: 2rem;
+              box-shadow: none;
+            }
+            
+            .main {
+              margin-left: auto;
+              max-width: var(--main-width);
+            }
+          }
+          
+          /* 其他样式保持不变 */
+          .post-content pre code {
+            font-family: Consolas, Monaco, "LXGWWenKaiScreenR";
+            font-size: 0.9em;
+            background: var(--hljs-bg) !important;
+          }
+          
+          /* 表格样式 */
+          table {
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+            width: 100%;
+            
+            & thead th {
+              border-bottom: 2px solid var(--border);
+            }
+            
+            & tbody tr:hover {
+              background-color: var(--code-bg);
+            }
+          }
+          
+          /* 引用块样式 */
+          blockquote {
+            position: relative;
+            margin: 1em auto;
+            padding-left: 3em;
+            border: none;
+            
+            &::before {
+              position: absolute;
+              left: 0;
+              content: """;
+              font-size: 3em;
+              font-weight: bold;
+              line-height: 1;
+            }
+          }
+          
+          /* 图片样式 */
+          .post-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 1rem auto;
+            display: block;
+          }
+          EOL
+          
+          # 创建图片处理模板
+          cat > layouts/_default/_markup/render-image.html <<EOL
+          <figure class="zoom-img">
+            <img src="{{ .Destination | safeURL }}" alt="{{ .Text }}" data-zoomable>
+            {{ if .Title }}<figcaption>{{ .Title }}</figcaption>{{ end }}
+          </figure>
+          EOL
+          
+          # 更新扩展头部
+          cat > layouts/partials/extend_head.html <<EOL
+          <!-- Medium Zoom -->
+          <script src="https://cdn.jsdelivr.net/npm/medium-zoom/dist/medium-zoom.min.js"></script>
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              mediumZoom('[data-zoomable]', {
+                margin: 24,
+                background: 'rgba(0,0,0,0.8)',
+                scrollOffset: 0,
+              });
+            });
+          </script>
+          
+          <!-- 盘古之白 -->
+          <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js"></script>
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              pangu.spacingPage();
+            });
+          </script>
+          
+          <style>
+            /* 图片悬停效果 */
+            [data-zoomable] {
+              cursor: zoom-in;
+              transition: transform 0.2s ease-in-out;
+            }
+            
+            [data-zoomable]:hover {
+              transform: scale(1.02);
+            }
+            
+            /* 图片容器样式 */
+            .zoom-img {
+              margin: 2rem 0;
+              text-align: center;
+            }
+            
+            .zoom-img img {
+              max-width: 100%;
+              height: auto;
+              border-radius: 4px;
+            }
+            
+            .zoom-img figcaption {
+              margin-top: 0.5rem;
+              color: var(--secondary);
+              font-size: 0.9em;
+            }
+          </style>
+          EOL
+
+      - name: Create theme and setup assets
+        run: |
+          # 安装主题
+          git clone --depth 1 https://github.com/adityatelange/hugo-PaperMod.git themes/PaperMod
+          
+          # 创建必要的目录
+          mkdir -p assets/css/extended
+          mkdir -p layouts/partials
+          mkdir -p layouts/shortcodes
+          mkdir -p layouts/_default/_markup
+          mkdir -p static/fonts
+          mkdir -p static/images
+          
+          # 下载并安装霞鹜文楷字体
+          wget -O static/fonts/lxgwwenkaiscreen.subset.v1.235.standard.woff2 https://github.com/lxgw/LxgwWenKai-Lite/releases/download/v1.235/LXGWWenKaiLite-Regular.ttf
+          
+          # 创建扩展 CSS 文件
+          cat > assets/css/extended/custom.css <<EOL
+          /* 自定义字体 */
+          @font-face {
+            font-family: "LXGWWenKaiScreenR";
+            src: url("/Articles/fonts/lxgwwenkaiscreen.subset.v1.235.standard.woff2");
+          }
+          
+          body {
+            font-family: "LXGWWenKaiScreenR", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+          }
+          
+          /* 左侧目录样式 */
+          .toc {
+            position: fixed;
+            left: 1rem;
+            top: 5rem;
+            width: 240px;
+            max-height: calc(100vh - 6rem);
+            overflow-y: auto;
+            background: var(--entry);
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-size: 0.9em;
+            z-index: 100;
+          }
+          
+          .toc details {
+            border-left: 2px solid var(--border);
+            margin-left: 0.5rem;
+            padding-left: 0.5rem;
+          }
+          
+          .toc summary {
+            cursor: pointer;
+            margin-bottom: 0.2rem;
+          }
+          
+          .toc li {
+            margin: 0.3rem 0;
+            list-style: none;
+          }
+          
+          .toc a {
+            color: var(--secondary);
+            text-decoration: none;
+          }
+          
+          .toc a:hover {
+            color: var(--primary);
+            text-decoration: underline;
+          }
+          
+          /* 适应左侧目录的主内容区域 */
+          .main {
+            max-width: calc(var(--main-width) + 280px);
+            margin-left: 260px;
+          }
+          
+          /* 移动设备适配 */
+          @media screen and (max-width: 1200px) {
+            .toc {
+              position: relative;
+              left: 0;
+              top: 0;
+              width: 100%;
+              max-height: none;
+              margin-bottom: 2rem;
+              box-shadow: none;
+            }
+            
+            .main {
+              margin-left: auto;
+              max-width: var(--main-width);
+            }
+          }
+          
+          /* 其他样式保持不变 */
+          .post-content pre code {
+            font-family: Consolas, Monaco, "LXGWWenKaiScreenR";
+            font-size: 0.9em;
+            background: var(--hljs-bg) !important;
+          }
+          
+          /* 表格样式 */
+          table {
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+            width: 100%;
+            
+            & thead th {
+              border-bottom: 2px solid var(--border);
+            }
+            
+            & tbody tr:hover {
+              background-color: var(--code-bg);
+            }
+          }
+          
+          /* 引用块样式 */
+          blockquote {
+            position: relative;
+            margin: 1em auto;
+            padding-left: 3em;
+            border: none;
+            
+            &::before {
+              position: absolute;
+              left: 0;
+              content: """;
+              font-size: 3em;
+              font-weight: bold;
+              line-height: 1;
+            }
+          }
+          
+          /* 图片样式 */
+          .post-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 1rem auto;
+            display: block;
+          }
+          EOL
+          
+          # 创建图片处理模板
+          cat > layouts/_default/_markup/render-image.html <<EOL
+          <figure class="zoom-img">
+            <img src="{{ .Destination | safeURL }}" alt="{{ .Text }}" data-zoomable>
+            {{ if .Title }}<figcaption>{{ .Title }}</figcaption>{{ end }}
+          </figure>
+          EOL
+          
+          # 更新扩展头部
+          cat > layouts/partials/extend_head.html <<EOL
+          <!-- Medium Zoom -->
+          <script src="https://cdn.jsdelivr.net/npm/medium-zoom/dist/medium-zoom.min.js"></script>
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              mediumZoom('[data-zoomable]', {
+                margin: 24,
+                background: 'rgba(0,0,0,0.8)',
+                scrollOffset: 0,
+              });
+            });
+          </script>
+          
+          <!-- 盘古之白 -->
+          <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js"></script>
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              pangu.spacingPage();
+            });
+          </script>
+          
+          <style>
+            /* 图片悬停效果 */
+            [data-zoomable] {
+              cursor: zoom-in;
+              transition: transform 0.2s ease-in-out;
+            }
+            
+            [data-zoomable]:hover {
+              transform: scale(1.02);
+            }
+            
+            /* 图片容器样式 */
+            .zoom-img {
+              margin: 2rem 0;
+              text-align: center;
+            }
+            
+            .zoom-img img {
+              max-width: 100%;
+              height: auto;
+              border-radius: 4px;
+            }
+            
+            .zoom-img figcaption {
+              margin-top: 0.5rem;
+              color: var(--secondary);
+              font-size: 0.9em;
+            }
+          </style>
+          EOL
+
+      - name: Create theme and setup assets
+        run: |
+          # 安装主题
+          git clone --depth 1 https://github.com/adityatelange/hugo-PaperMod.git themes/PaperMod
+          
+          # 创建必要的目录
+          mkdir -p assets/css/extended
+          mkdir -p layouts/partials
+          mkdir -p layouts/shortcodes
+          mkdir -p layouts/_default/_markup
+          mkdir -p static/fonts
+          mkdir -p static/images
+          
+          # 下载并安装霞鹜文楷字体
+          wget -O static/fonts/lxgwwenkaiscreen.subset.v1.235.standard.woff2 https://github.com/lxgw/LxgwWenKai-Lite/releases/download/v1.235/LXGWWenKaiLite-Regular.ttf
+          
+          # 创建扩展 CSS 文件
+          cat > assets/css/extended/custom.css <<EOL
+          /* 自定义字体 */
+          @font-face {
+            font-family: "LXGWWenKaiScreenR";
+            src: url("/Articles/fonts/lxgwwenkaiscreen.subset.v1.235.standard.woff2");
+          }
+          
+          body {
+            font-family: "LXGWWenKaiScreenR", -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+          }
+          
+          /* 左侧目录样式 */
+          .toc {
+            position: fixed;
+            left: 1rem;
+            top: 5rem;
+            width: 240px;
+            max-height: calc(100vh - 6rem);
+            overflow-y: auto;
+            background: var(--entry);
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-size: 0.9em;
+            z-index: 100;
+          }
+          
+          .toc details {
+            border-left: 2px solid var(--border);
+            margin-left: 0.5rem;
+            padding-left: 0.5rem;
+          }
+          
+          .toc summary {
+            cursor: pointer;
+            margin-bottom: 0.2rem;
+          }
+          
+          .toc li {
+            margin: 0.3rem 0;
+            list-style: none;
+          }
+          
+          .toc a {
+            color: var(--secondary);
+            text-decoration: none;
+          }
+          
+          .toc a:hover {
+            color: var(--primary);
+            text-decoration: underline;
+          }
+          
+          /* 适应左侧目录的主内容区域 */
+          .main {
+            max-width: calc(var(--main-width) + 280px);
+            margin-left: 260px;
+          }
+          
+          /* 移动设备适配 */
+          @media screen and (max-width: 1200px) {
+            .toc {
+              position: relative;
+              left: 0;
+              top: 0;
+              width: 100%;
+              max-height: none;
+              margin-bottom: 2rem;
+              box-shadow: none;
+            }
+            
+            .main {
+              margin-left: auto;
+              max-width: var(--main-width);
+            }
+          }
+          
+          /* 其他样式保持不变 */
+          .post-content pre code {
+            font-family: Consolas, Monaco, "LXGWWenKaiScreenR";
+            font-size: 0.9em;
+            background: var(--hljs-bg) !important;
+          }
+          
+          /* 表格样式 */
+          table {
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+            width: 100%;
+            
+            & thead th {
+              border-bottom: 2px solid var(--border);
+            }
+            
+            & tbody tr:hover {
+              background-color: var(--code-bg);
+            }
+          }
+          
+          /* 引用块样式 */
+          blockquote {
+            position: relative;
+            margin: 1em auto;
+            padding-left: 3em;
+            border: none;
+            
+            &::before {
+              position: absolute;
+              left: 0;
+              content: """;
+              font-size: 3em;
+              font-weight: bold;
+              line-height: 1;
+            }
+          }
+          
+          /* 图片样式 */
+          .post-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 1rem auto;
+            display: block;
+          }
+          EOL
+          
+          # 创建图片处理模板
+          cat > layouts/_default/_markup/render-image.html <<EOL
+          <figure class="zoom-img">
+            <img src="{{ .Destination | safeURL }}" alt="{{ .Text }}" data-zoomable>
+            {{ if .Title }}<figcaption>{{ .Title }}</figcaption>{{ end }}
+          </figure>
+          EOL
+          
+          # 更新扩展头部
+          cat > layouts/partials/extend_head.html <<EOL
+          <!-- Medium Zoom -->
+          <script src="https://cdn.jsdelivr.net/npm/medium-zoom/dist/medium-zoom.min.js"></script>
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              mediumZoom('[data-zoomable]', {
+                margin: 24,
+                background: 'rgba(0,0,0,0.8)',
+                scrollOffset: 0,
+              });
+            });
+          </script>
+          
+          <!-- 盘古之白 -->
+          <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js"></script>
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              pangu.spacingPage();
+            });
+          </script>
+          
+          <style>
+            /* 图片悬停效果 */
+            [data-zoomable] {
+              cursor: zoom-in;
+              transition: transform 0.2s ease-in-out;
+            }
+            
+            [data-zoomable]:hover {
+              transform: scale(1.02);
+            }
+            
+            /* 图片容器样式 */
+            .zoom-img {
+              margin: 2rem 0;
+              text-align: center;
+            }
+            
+            .zoom-img img {
+              max-width: 100%;
+              height: auto;
+              border-radius: 4px;
+            }
+            
+            .zoom-img figcaption {
+              margin-top: 0.5rem;
+              color: var(--secondary);
+              font-size: 0.9em;
+            }
+          </style>
+          EOL
+
       - name: Create Hugo config
         run: |
           cat > config.yml <<EOL
@@ -469,3 +1078,63 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Create floating-toc template
+        run: |
+          mkdir -p layouts/partials
+          cat > layouts/partials/floating-toc.html <<EOL
+          {{- if and .TableOfContents (not .Params.disableToc) }}
+          <div class="floating-toc">
+            <div class="floating-toc-title">目录</div>
+            <nav id="TableOfContents">
+              {{ .TableOfContents }}
+            </nav>
+          </div>
+          
+          <!-- 添加目录滚动监听 -->
+          <script>
+          document.addEventListener('DOMContentLoaded', () => {
+            const tocLinks = document.querySelectorAll('.floating-toc a');
+            const sections = document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]');
+            
+            const observerOptions = {
+              rootMargin: '-60px 0px -80% 0px',
+              threshold: 0
+            };
+            
+            const observer = new IntersectionObserver(entries => {
+              entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                  tocLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + entry.target.id) {
+                      link.classList.add('active');
+                    }
+                  });
+                }
+              });
+            }, observerOptions);
+            
+            sections.forEach(section => observer.observe(section));
+          });
+          </script>
+          {{- end }}
+          EOL
+
+      - name: Create article template
+        run: |
+          mkdir -p layouts/_default
+          cat > layouts/_default/single.html <<EOL
+          {{ define "main" }}
+          <article class="post-single">
+            {{ partial "floating-toc.html" . }}
+            <header class="post-header">
+              {{ partial "breadcrumbs.html" . }}
+              <h1 class="post-title">{{ .Title }}</h1>
+              {{ partial "post_meta.html" . }}
+            </header>
+            <div class="post-content">{{ .Content }}</div>
+            {{ partial "post_footer.html" . }}
+          </article>
+          {{ end }}
+          EOL
