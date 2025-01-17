@@ -18,7 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      HUGO_VERSION: 0.121.1
+      HUGO_VERSION: 0.84.0
     steps:
       - name: Install Hugo CLI
         run: |
@@ -45,6 +45,15 @@ jobs:
           
           # MemE 主题的必要配置
           enableGitInfo = true
+          defaultContentLanguage = "zh-cn"
+          defaultContentLanguageInSubdir = false
+          
+          hasCJKLanguage = true
+          
+          [languages]
+            [languages.zh-cn]
+              languageName = "中文"
+              weight = 1
           
           [params]
             version = "2.x"
