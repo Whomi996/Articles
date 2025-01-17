@@ -17,37 +17,35 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      HUGO_VERSION: 0.84.0
     steps:
       - name: Install Hugo CLI
         run: |
-          wget -O ${{ runner.temp }}/hugo.deb https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb \
-          && sudo dpkg -i ${{ runner.temp }}/hugo.deb          
+          wget -O ${{ runner.temp }}/hugo.deb https://github.com/gohugoio/hugo/releases/download/v0.111.3/hugo_extended_0.111.3_linux-amd64.deb \
+          && sudo dpkg -i ${{ runner.temp }}/hugo.deb
 
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          submodules: recursive
           fetch-depth: 0
 
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v4
 
-      - name: Init Hugo Site
+      - name: Install theme
+        run: git clone --depth 1 https://github.com/reuixiy/hugo-theme-meme.git themes/meme
+
+      - name: Create Hugo config
         run: |
-          # 创建 Hugo 站点配置
           cat > config.toml <<EOL
           baseURL = 'https://whomi996.github.io/Articles/'
           languageCode = 'zh-cn'
           title = 'Articles'
           theme = 'meme'
           
-          # MemE 主题的必要配置
-          enableGitInfo = true
           defaultContentLanguage = "zh-cn"
           defaultContentLanguageInSubdir = false
-          
           hasCJKLanguage = true
           
           [languages]
@@ -59,61 +57,53 @@ jobs:
             version = "2.x"
             defaultTheme = "light"
             gitRepo = "https://github.com/whomi996/Articles"
-            
-            # 显示菜单栏
             enableMenu = true
-            
-            # 显示文章的目录
             enableToc = true
-            
-            # 显示返回顶部按钮
             enableBackToTop = true
             
-          [markup.goldmark.renderer]
-            unsafe = true
+          [markup]
+            [markup.goldmark]
+              [markup.goldmark.renderer]
+                unsafe = true
+            [markup.highlight]
+              noClasses = false
           EOL
-          
-          # 下载并设置 MemE 主题
-          git clone --depth 1 https://github.com/reuixiy/hugo-theme-meme.git themes/meme
-          
-          # 创建内容目录结构
+
+      - name: Setup content structure
+        run: |
           mkdir -p content/posts
           mkdir -p content/about
           
-          # 移动并组织 Markdown 文件
-          find . -name "*.md" -not -path "./themes/*" -not -path "./archetypes/*" -not -path "./content/*" -not -path "./layouts/*" | while read file; do
-            # 获取相对路径
-            rel_path=${file#./}
-            dir_path=$(dirname "$rel_path")
-            
-            # 如果不是在根目录，创建对应的内容目录
-            if [ "$dir_path" != "." ]; then
-              mkdir -p "content/$dir_path"
-              target_path="content/$rel_path"
-            else
-              target_path="content/posts/$(basename "$rel_path")"
-            fi
-            
-            # 移动文件并添加/更新前置数据
+          # 处理 Markdown 文件
+          find . -name "*.md" -not -path "./themes/*" -not -path "./archetypes/*" -not -path "./content/*" | while read file; do
             if [ -f "$file" ]; then
-              title=$(basename "$file" .md)
-              date=$(git log -1 --format=%aI -- "$file")
-              lastmod=$(git log -1 --format=%aI -- "$file")
+              filename=$(basename "$file")
+              if [ "$filename" = "README.md" ]; then
+                continue
+              fi
               
-              # 如果文件没有 front matter，添加它
+              dir_path=$(dirname "$file")
+              if [ "$dir_path" = "." ]; then
+                target="content/posts/$filename"
+              else
+                target="content/${dir_path#./}/$filename"
+                mkdir -p "content/${dir_path#./}"
+              fi
+              
+              # 添加或更新 front matter
               if ! grep -q "^---" "$file"; then
+                title=$(basename "$file" .md)
+                date=$(git log -1 --format=%aI -- "$file")
                 temp_file=$(mktemp)
                 echo "---" > "$temp_file"
                 echo "title: \"$title\"" >> "$temp_file"
                 echo "date: $date" >> "$temp_file"
-                echo "lastmod: $lastmod" >> "$temp_file"
+                echo "draft: false" >> "$temp_file"
                 echo "---" >> "$temp_file"
                 cat "$file" >> "$temp_file"
-                mkdir -p $(dirname "$target_path")
-                mv "$temp_file" "$target_path"
+                mv "$temp_file" "$target"
               else
-                mkdir -p $(dirname "$target_path")
-                mv "$file" "$target_path"
+                cp "$file" "$target"
               fi
             fi
           done
@@ -122,7 +112,7 @@ jobs:
         env:
           HUGO_ENVIRONMENT: production
           HUGO_ENV: production
-        run: hugo --gc --minify
+        run: hugo --minify
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
