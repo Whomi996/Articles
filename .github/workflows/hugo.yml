@@ -230,7 +230,7 @@ jobs:
           ---
           EOL
           
-          # 创建分类页面
+          # 创建分类页面的
           cat > content/categories/_index.md <<EOL
           ---
           title: "分类"
