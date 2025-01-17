@@ -41,12 +41,12 @@ jobs:
           baseURL = 'https://whomi996.github.io/Articles/'
           # 后续如果要自定义域名需要改为baseURL = 'https://example.com/'
           languageCode = 'zh-cn'
-          title = 'Articles'
-          theme = 'paper'
+          title = 'My blog '
+          theme = 'hugo-book'
           
           [params]
             github = 'whomi996'
-            rss = true
+            rss = false
             color = 'linen'
             
           [taxonomies]
@@ -58,7 +58,7 @@ jobs:
           EOL
           
           # 下载并设置主题
-          git clone https://github.com/nanxiaobei/hugo-paper themes/paper
+          git submodule add https://github.com/alex-shpak/hugo-book themes/hugo-book themes/hugo-book
           
           # 创建自定义主页模板
           mkdir -p layouts
