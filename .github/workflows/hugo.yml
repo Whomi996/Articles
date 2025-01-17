@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Install Hugo CLI
         run: |
-          wget -O ${{ runner.temp }}/hugo.deb https://github.com/gohugoio/hugo/releases/download/v0.111.3/hugo_extended_0.111.3_linux-amd64.deb \
+          wget -O ${{ runner.temp }}/hugo.deb https://github.com/gohugoio/hugo/releases/download/v0.74.3/hugo_extended_0.74.3_linux-amd64.deb \
           && sudo dpkg -i ${{ runner.temp }}/hugo.deb
 
       - name: Checkout
@@ -44,29 +44,65 @@ jobs:
           title = 'Articles'
           theme = 'meme'
           
-          defaultContentLanguage = "zh-cn"
+          enableGitInfo = true
+          
+          defaultContentLanguage = "zh"
           defaultContentLanguageInSubdir = false
-          hasCJKLanguage = true
+          
+          enableRobotsTXT = true
           
           [languages]
-            [languages.zh-cn]
+            [languages.zh]
               languageName = "中文"
               weight = 1
+              hasCJKLanguage = true
           
           [params]
             version = "2.x"
             defaultTheme = "light"
             gitRepo = "https://github.com/whomi996/Articles"
+            
             enableMenu = true
             enableToc = true
             enableBackToTop = true
             
+            # Post 页面配置
+            enablePostGitInfo = true
+            displayPostGitInfo = true
+            repoPostURL = "https://github.com/whomi996/Articles/blob/main/content/{{ .Path }}"
+            
+            # 页脚配置
+            enableFooter = true
+            displayCopyrightSymbol = true
+            displaySiteCreatedYear = true
+            
           [markup]
+            defaultMarkdownHandler = "goldmark"
             [markup.goldmark]
+              [markup.goldmark.extensions]
+                definitionList = true
+                footnote = true
+                linkify = true
+                strikethrough = true
+                table = true
+                taskList = true
+                typographer = false
+              [markup.goldmark.parser]
+                attribute = true
+                autoHeadingID = true
               [markup.goldmark.renderer]
+                hardWraps = false
                 unsafe = true
+                xHTML = false
             [markup.highlight]
+              codeFences = true
+              guessSyntax = false
+              lineNos = true
+              lineNumbersInTable = true
               noClasses = false
+            [markup.tableOfContents]
+              startLevel = 2
+              endLevel = 6
           EOL
 
       - name: Setup content structure
