@@ -47,8 +47,6 @@ jobs:
           mkdir -p layouts/_default/_markup
           mkdir -p static/fonts
           mkdir -p static/images
-          mkdir -p content/posts
-          mkdir -p content/search
           
           # 下载并安装字体（直接从GitHub仓库下载，添加重试逻辑）
           download_with_retry() {
@@ -288,6 +286,19 @@ jobs:
           ---
           title: "搜索"
           layout: "search"
+          ---
+          EOL
+
+          # 创建分类和标签索引页面
+          cat > content/categories/_index.md <<EOL
+          ---
+          title: "分类"
+          ---
+          EOL
+
+          cat > content/tags/_index.md <<EOL
+          ---
+          title: "标签"
           ---
           EOL
 
