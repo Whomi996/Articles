@@ -51,7 +51,7 @@ jobs:
           mkdir -p content/search
           
           # 下载并安装字体（直接从GitHub仓库下载，添加重试逻辑）
-          function download_with_retry {
+          download_with_retry() {
             local url=$1
             local output=$2
             local max_attempts=3
