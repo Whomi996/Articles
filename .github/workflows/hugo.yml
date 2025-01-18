@@ -150,7 +150,7 @@ jobs:
           /* 目录样式 */
           .toc {
             position: fixed;
-            right: calc((100vw - var(--main-width)) / 2 + var(--gap));
+            left: calc((100vw - var(--main-width)) / 2 - var(--toc-width) - var(--gap));
             top: 100px;
             width: var(--toc-width);
             max-height: calc(100vh - 150px);
@@ -161,6 +161,7 @@ jobs:
             border-radius: var(--radius);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
+            z-index: 100;
           }
           
           .toc:hover {
@@ -171,9 +172,9 @@ jobs:
           /* 目录内容样式 */
           .toc details {
             margin: 0.5rem 0;
-            padding-left: 1rem;
+            padding-left: 0.8rem;
             border-left: 2px solid var(--border);
-            transition: border-color 0.3s ease;
+            transition: all 0.3s ease;
           }
           
           .toc details:hover {
@@ -196,6 +197,25 @@ jobs:
             list-style: none;
             padding: 0.3rem 0;
             transition: all 0.3s ease;
+            position: relative;
+          }
+
+          .toc li::before {
+            content: '';
+            position: absolute;
+            left: -0.8rem;
+            top: 50%;
+            width: 4px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 50%;
+            transform: translateY(-50%);
+            transition: all 0.3s ease;
+          }
+
+          .toc li:hover::before {
+            background: var(--primary);
+            transform: translateY(-50%) scale(1.2);
           }
           
           .toc li:hover {
@@ -223,22 +243,32 @@ jobs:
             padding: 0.2rem 0.5rem;
           }
           
+          /* 右侧留白 */
+          .post-single {
+            margin-right: 100px;
+          }
+          
           /* 响应式设计 */
           @media screen and (max-width: 1400px) {
             :root {
               --main-width: 95vw;
               --article-width: 100%;
-              --toc-width: 250px;
+              --toc-width: 280px;
             }
             
             .toc {
-              right: var(--gap);
-              transform: translateX(calc(100% + var(--gap)));
+              left: 0;
+              transform: translateX(-100%);
               transition: transform 0.3s ease;
+              border-radius: 0 var(--radius) var(--radius) 0;
             }
             
             .toc:hover {
               transform: translateX(0);
+            }
+            
+            .post-single {
+              margin-right: 0;
             }
           }
           
@@ -369,6 +399,51 @@ jobs:
           <script>
             document.addEventListener('DOMContentLoaded', () => {
               pangu.spacingPage();
+            });
+          </script>
+
+          <!-- 目录滚动监听 -->
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+              const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                  const id = entry.target.getAttribute('id');
+                  const tocLink = document.querySelector(`.toc a[href="#${id}"]`);
+                  
+                  if (tocLink) {
+                    if (entry.intersectionRatio > 0) {
+                      document.querySelectorAll('.toc a').forEach(link => {
+                        link.classList.remove('active');
+                      });
+                      tocLink.classList.add('active');
+                    }
+                  }
+                });
+              }, {
+                rootMargin: '-100px 0px -66%',
+                threshold: 0
+              });
+
+              // 监听所有标题元素
+              document.querySelectorAll('h1[id], h2[id], h3[id], h4[id]').forEach(heading => {
+                observer.observe(heading);
+              });
+
+              // 平滑滚动
+              document.querySelectorAll('.toc a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                  e.preventDefault();
+                  const targetId = link.getAttribute('href').slice(1);
+                  const targetElement = document.getElementById(targetId);
+                  
+                  if (targetElement) {
+                    window.scrollTo({
+                      top: targetElement.offsetTop - 100,
+                      behavior: 'smooth'
+                    });
+                  }
+                });
+              });
             });
           </script>
           
