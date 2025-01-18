@@ -281,33 +281,33 @@ jobs:
           
           # 定义关键词和对应的标签
           declare -A keyword_tags=(
-            ["GPT"]="人工智能"
-            ["ChatGPT"]="人工智能"
-            ["大模型"]="人工智能"
-            ["LLM"]="人工智能"
-            ["机器学习"]="人工智能"
-            ["深度学习"]="人工智能"
-            ["神经网络"]="人工智能"
+            ["GPT"]="人工智能,大语言模型"
+            ["ChatGPT"]="人工智能,大语言模型"
+            ["大模型"]="人工智能,大语言模型"
+            ["LLM"]="人工智能,大语言模型"
+            ["机器学习"]="人工智能,算法"
+            ["深度学习"]="人工智能,算法"
+            ["神经网络"]="人工智能,算法"
             ["人工智能"]="人工智能"
             ["增长"]="增长"
-            ["营销"]="增长"
-            ["获客"]="增长"
-            ["转化"]="增长"
-            ["用户"]="增长"
+            ["营销"]="增长,营销"
+            ["获客"]="增长,营销"
+            ["转化"]="增长,营销"
+            ["用户"]="增长,用户体验"
             ["数据"]="数据分析"
             ["分析"]="数据分析"
-            ["指标"]="数据分析"
-            ["监控"]="数据分析"
+            ["指标"]="数据分析,运营"
+            ["监控"]="数据分析,运营"
             ["技术"]="技术开发"
-            ["架构"]="技术开发"
+            ["架构"]="技术开发,系统设计"
             ["开发"]="技术开发"
             ["编程"]="技术开发"
             ["产品"]="产品设计"
-            ["设计"]="产品设计"
-            ["体验"]="产品设计"
+            ["设计"]="产品设计,用户体验"
+            ["体验"]="产品设计,用户体验"
             ["运营"]="运营推广"
-            ["推广"]="运营推广"
-            ["渠道"]="运营推广"
+            ["推广"]="运营推广,营销"
+            ["渠道"]="运营推广,营销"
           )
           
           # 移动并处理文章
@@ -320,16 +320,79 @@ jobs:
                   filename=$(basename "$file")
                   name="${filename%.*}"
                   
-                  # 读取文章内容到变量
-                  content=$(cat "$file")
+                  # 读取文章内容并提取front matter信息
+                  original_title=""
+                  original_date=""
+                  original_categories=""
+                  original_tags=""
+                  original_draft=""
+                  original_description=""
+                  original_summary=""
+                  content=""
+                  in_front_matter=false
+                  while IFS= read -r line; do
+                    if [[ "$line" == "---" ]]; then
+                      if [ "$in_front_matter" = true ]; then
+                        in_front_matter=false
+                        continue
+                      else
+                        in_front_matter=true
+                        continue
+                      fi
+                    fi
+                    
+                    if [ "$in_front_matter" = true ]; then
+                      if [[ "$line" =~ ^title:\ *(.*) ]]; then
+                        original_title="${BASH_REMATCH[1]}"
+                        # 移除引号
+                        original_title="${original_title#\"}"
+                        original_title="${original_title%\"}"
+                      elif [[ "$line" =~ ^date:\ *(.*) ]]; then
+                        original_date="${BASH_REMATCH[1]}"
+                      elif [[ "$line" =~ ^categories:\ *(.*) ]]; then
+                        original_categories="${BASH_REMATCH[1]}"
+                      elif [[ "$line" =~ ^tags:\ *(.*) ]]; then
+                        original_tags="${BASH_REMATCH[1]}"
+                      elif [[ "$line" =~ ^draft:\ *(.*) ]]; then
+                        original_draft="${BASH_REMATCH[1]}"
+                      elif [[ "$line" =~ ^description:\ *(.*) ]]; then
+                        original_description="${BASH_REMATCH[1]}"
+                      elif [[ "$line" =~ ^summary:\ *(.*) ]]; then
+                        original_summary="${BASH_REMATCH[1]}"
+                      fi
+                    else
+                      if [ "$in_front_matter" = false ]; then
+                        # 只有当不在front matter中时才添加内容
+                        content+="$line"$'\n'
+                      fi
+                    fi
+                  done < "$file"
+                  
+                  # 如果没有找到原始标题，使用文件名
+                  if [ -z "$original_title" ]; then
+                    original_title="$name"
+                  fi
+                  
+                  # 如果没有找到原始日期，使用当前时间
+                  if [ -z "$original_date" ]; then
+                    original_date="$(date -Iseconds)"
+                  fi
                   
                   # 初始化标签数组
                   declare -A found_tags
                   
-                  # 遍历关键词查找标签
+                  # 遍历关键词查找标签（支持多个关键词匹配）
                   for keyword in "${!keyword_tags[@]}"; do
-                    if echo "$content" | grep -q "$keyword"; then
-                      found_tags["${keyword_tags[$keyword]}"]=1
+                    # 使用不区分大小写的匹配
+                    if echo "$content" | grep -qi "$keyword"; then
+                      tag_value="${keyword_tags[$keyword]}"
+                      # 如果是以逗号分隔的多个标签，则分别添加
+                      IFS=',' read -ra tag_array <<< "$tag_value"
+                      for tag in "${tag_array[@]}"; do
+                        # 移除前后空格
+                        tag=$(echo "$tag" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+                        found_tags["$tag"]=1
+                      fi
                     fi
                   done
                   
@@ -347,15 +410,42 @@ jobs:
                   
                   # 创建新的front matter
                   echo "---" > "temp_posts/${name}.md"
-                  echo "title: \"${name}\"" >> "temp_posts/${name}.md"
-                  echo "date: $(date -Iseconds)" >> "temp_posts/${name}.md"
-                  echo "draft: false" >> "temp_posts/${name}.md"
-                  echo "categories: [\"${src_dir##*/}\"]" >> "temp_posts/${name}.md"
-                  echo "tags: [$tags_yaml]" >> "temp_posts/${name}.md"
+                  echo "title: \"${original_title}\"" >> "temp_posts/${name}.md"
+                  echo "date: ${original_date}" >> "temp_posts/${name}.md"
+                  echo "lastmod: $(date -Iseconds)" >> "temp_posts/${name}.md"
+                  
+                  # 使用原始draft状态（如果存在），否则默认为false
+                  if [ -n "$original_draft" ]; then
+                    echo "draft: $original_draft" >> "temp_posts/${name}.md"
+                  else
+                    echo "draft: false" >> "temp_posts/${name}.md"
+                  fi
+                  
+                  # 添加description和summary（如果存在）
+                  if [ -n "$original_description" ]; then
+                    echo "description: $original_description" >> "temp_posts/${name}.md"
+                  fi
+                  if [ -n "$original_summary" ]; then
+                    echo "summary: $original_summary" >> "temp_posts/${name}.md"
+                  fi
+                  
+                  # 使用原始categories（如果存在），否则使用目录名
+                  if [ -n "$original_categories" ]; then
+                    echo "categories: $original_categories" >> "temp_posts/${name}.md"
+                  else
+                    echo "categories: [\"${src_dir##*/}\"]" >> "temp_posts/${name}.md"
+                  fi
+                  
+                  # 使用原始tags（如果存在），否则使用自动生成的tags
+                  if [ -n "$original_tags" ]; then
+                    echo "tags: $original_tags" >> "temp_posts/${name}.md"
+                  else
+                    echo "tags: [$tags_yaml]" >> "temp_posts/${name}.md"
+                  fi
                   echo "---" >> "temp_posts/${name}.md"
                   
-                  # 添加文章内容
-                  echo "$content" >> "temp_posts/${name}.md"
+                  # 添加文章内容（移除开头和结尾的空行）
+                  echo "$content" | sed -e '/./,$!d' -e :a -e '/^\n*$/{$d;N;ba' -e '}' >> "temp_posts/${name}.md"
                 fi
               done
             fi
