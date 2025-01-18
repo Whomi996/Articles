@@ -44,18 +44,15 @@ jobs:
           # 创建必要的目录
           mkdir -p assets/css/extended
           mkdir -p layouts/partials
-          mkdir -p layouts/shortcodes
           mkdir -p layouts/_default/_markup
           mkdir -p static/fonts
           mkdir -p static/images
-          mkdir -p static/js
           mkdir -p content/posts
           mkdir -p content/search
-          mkdir -p content/about
-
-          # 下载并安装思源宋体和霞鹜文楷字体
-          wget -O static/fonts/SourceHanSerifCN-Regular.otf https://github.com/adobe-fonts/source-han-serif/raw/release/OTF/SimplifiedChinese/SourceHanSerifSC-Regular.otf
-          wget -O static/fonts/lxgwwenkaiscreen.ttf https://github.com/lxgw/LxgwWenKai-Lite/releases/download/v1.235/LXGWWenKaiLite-Regular.ttf
+          
+          # 下载并安装字体（使用更快的jsDelivr CDN）
+          wget -O static/fonts/SourceHanSerifCN-Regular.otf https://cdn.jsdelivr.net/gh/adobe-fonts/source-han-serif@release/OTF/SimplifiedChinese/SourceHanSerifSC-Regular.otf
+          wget -O static/fonts/lxgwwenkaiscreen.ttf https://cdn.jsdelivr.net/gh/lxgw/LxgwWenKai-Lite@main/dist/LXGWWenKaiLite-Regular.ttf
           
           # 创建自定义样式文件
           cat > assets/css/extended/custom-style.css <<EOL
@@ -86,7 +83,7 @@ jobs:
             --main-width: 1200px;
             --article-width: 800px;
             --toc-width: 200px;
-            --gap: 32px;
+            --gap: 24px;
             --radius: 8px;
           }
           
@@ -95,7 +92,7 @@ jobs:
             :root {
               --main-width: 95vw;
               --article-width: 100%;
-              --toc-width: 250px;
+              --toc-width: 220px;
             }
           }
           
@@ -109,8 +106,7 @@ jobs:
             }
             
             .post-single {
-              margin-left: 0;
-              margin-right: 0;
+              margin: 0;
               padding: var(--gap);
             }
           }
@@ -118,7 +114,7 @@ jobs:
           /* 文章内容样式 */
           .post-single {
             max-width: var(--article-width);
-            margin-left: calc(var(--toc-width) + var(--gap));
+            margin: 0 auto;
             padding: var(--gap);
           }
           
@@ -137,15 +133,6 @@ jobs:
           .post-content code {
             font-family: "Fira Code", monospace;
           }
-          
-          /* 目录样式 */
-          .toc {
-            position: fixed;
-            left: 0;
-            top: 100px;
-            width: var(--toc-width);
-            padding: var(--gap);
-          }
           EOL
           
           # 创建图片处理模板
@@ -154,17 +141,6 @@ jobs:
             <img src="{{ .Destination | safeURL }}" alt="{{ .Text }}" loading="lazy">
             {{ with .Title }}<figcaption>{{ . }}</figcaption>{{ end }}
           </figure>
-          EOL
-          
-          # 创建扩展头部
-          cat > layouts/partials/extend_head.html <<EOL
-          <!-- 盘古之白 -->
-          <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js"></script>
-          <script>
-            document.addEventListener('DOMContentLoaded', () => {
-              pangu.spacingPage();
-            });
-          </script>
           EOL
 
       - name: Create Hugo config
@@ -177,6 +153,8 @@ jobs:
           
           enableGitInfo: true
           enableRobotsTXT: true
+          
+          paginate: 10
           
           outputs:
             home:
@@ -214,12 +192,6 @@ jobs:
               responsiveImages: true
               linkFullImages: true
               
-            toc:
-              enabled: true
-              position: "left"
-              collapsible: true
-              depth: 3
-              
           menu:
             main:
               - identifier: archives
@@ -256,11 +228,14 @@ jobs:
               startLevel: 2
           EOL
 
-      - name: Create required pages
+      - name: Move content
         run: |
-          # 创建归档页面
-          mkdir -p content/archives
-          cat > content/archives/_index.md <<EOL
+          # 移动所有文章到 posts 目录
+          mv 从0开始做增长/* content/posts/
+          mv AI大模型实战高手课/* content/posts/
+          
+          # 创建必要的页面
+          cat > content/archives.md <<EOL
           ---
           title: "归档"
           layout: "archives"
@@ -269,30 +244,10 @@ jobs:
           ---
           EOL
           
-          # 创建搜索页面
-          mkdir -p content/search
-          cat > content/search/_index.md <<EOL
+          cat > content/search.md <<EOL
           ---
           title: "搜索"
           layout: "search"
-          ---
-          EOL
-          
-          # 创建分类页面
-          mkdir -p content/categories
-          cat > content/categories/_index.md <<EOL
-          ---
-          title: "分类"
-          layout: "categories"
-          ---
-          EOL
-          
-          # 创建标签页面
-          mkdir -p content/tags
-          cat > content/tags/_index.md <<EOL
-          ---
-          title: "标签"
-          layout: "tags"
           ---
           EOL
 
@@ -300,7 +255,8 @@ jobs:
         env:
           HUGO_ENVIRONMENT: production
           HUGO_ENV: production
-        run: hugo --minify
+        run: |
+          hugo --minify --gc
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
