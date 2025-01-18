@@ -279,6 +279,37 @@ jobs:
           # 创建临时目录
           mkdir -p temp_posts
           
+          # 定义关键词和对应的标签
+          declare -A keyword_tags=(
+            ["GPT"]="AI"
+            ["ChatGPT"]="AI"
+            ["大模型"]="AI"
+            ["LLM"]="AI"
+            ["机器学习"]="AI"
+            ["深度学习"]="AI"
+            ["神经网络"]="AI"
+            ["人工智能"]="AI"
+            ["增长"]="Growth"
+            ["营销"]="Growth"
+            ["获客"]="Growth"
+            ["转化"]="Growth"
+            ["用户"]="Growth"
+            ["数据"]="Data"
+            ["分析"]="Data"
+            ["指标"]="Data"
+            ["监控"]="Data"
+            ["技术"]="Tech"
+            ["架构"]="Tech"
+            ["开发"]="Tech"
+            ["编程"]="Tech"
+            ["产品"]="Product"
+            ["设计"]="Product"
+            ["体验"]="Product"
+            ["运营"]="Operation"
+            ["推广"]="Operation"
+            ["渠道"]="Operation"
+          )
+          
           # 移动并处理文章
           process_articles() {
             local src_dir=$1
@@ -289,17 +320,42 @@ jobs:
                   filename=$(basename "$file")
                   name="${filename%.*}"
                   
+                  # 读取文章内容到变量
+                  content=$(cat "$file")
+                  
+                  # 初始化标签数组
+                  declare -A found_tags
+                  
+                  # 遍历关键词查找标签
+                  for keyword in "${!keyword_tags[@]}"; do
+                    if echo "$content" | grep -q "$keyword"; then
+                      found_tags["${keyword_tags[$keyword]}"]=1
+                    fi
+                  done
+                  
+                  # 将标签数组转换为YAML数组格式
+                  tags_yaml=""
+                  for tag in "${!found_tags[@]}"; do
+                    tags_yaml="$tags_yaml\"$tag\", "
+                  done
+                  tags_yaml=${tags_yaml%, }  # 移除最后的逗号和空格
+                  
+                  # 如果没有找到标签，添加默认标签
+                  if [ -z "$tags_yaml" ]; then
+                    tags_yaml="\"Other\""
+                  fi
+                  
                   # 创建新的front matter
                   echo "---" > "temp_posts/${name}.md"
                   echo "title: \"${name}\"" >> "temp_posts/${name}.md"
                   echo "date: $(date -Iseconds)" >> "temp_posts/${name}.md"
                   echo "draft: false" >> "temp_posts/${name}.md"
                   echo "categories: [\"${src_dir##*/}\"]" >> "temp_posts/${name}.md"
-                  echo "tags: []" >> "temp_posts/${name}.md"
+                  echo "tags: [$tags_yaml]" >> "temp_posts/${name}.md"
                   echo "---" >> "temp_posts/${name}.md"
                   
                   # 添加文章内容
-                  cat "$file" >> "temp_posts/${name}.md"
+                  echo "$content" >> "temp_posts/${name}.md"
                 fi
               done
             fi
