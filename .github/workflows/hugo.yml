@@ -48,122 +48,297 @@ jobs:
           mkdir -p layouts/_default/_markup
           mkdir -p static/fonts
           mkdir -p static/images
+          mkdir -p static/js
           mkdir -p content/posts
           mkdir -p content/search
+          mkdir -p content/about
 
-          # 下载并安装霞鹜文楷字体
-          wget -O static/fonts/lxgwwenkaiscreen.subset.v1.235.standard.woff2 https://github.com/lxgw/LxgwWenKai-Lite/releases/download/v1.235/LXGWWenKaiLite-Regular.ttf
+          # 下载并安装思源宋体和霞鹜文楷字体
+          wget -O static/fonts/SourceHanSerifCN-Regular.otf https://github.com/adobe-fonts/source-han-serif/raw/release/OTF/SimplifiedChinese/SourceHanSerifSC-Regular.otf
+          wget -O static/fonts/lxgwwenkaiscreen.woff2 https://github.com/lxgw/LxgwWenKai-Lite/releases/download/v1.235/LXGWWenKaiLite-Regular.ttf
           
-          # 创建扩展 CSS 文件
-          cat > assets/css/extended/custom.css <<EOL
+          # 创建自定义样式文件
+          cat > assets/css/extended/custom-style.css <<EOL
           /* 自定义字体 */
           @font-face {
-            font-family: "LXGWWenKaiScreenR";
-            src: url("/Articles/fonts/lxgwwenkaiscreen.subset.v1.235.standard.woff2");
+            font-family: "Source Han Serif CN";
+            src: url("/Articles/fonts/SourceHanSerifCN-Regular.otf") format("opentype");
+            font-display: swap;
+          }
+          
+          @font-face {
+            font-family: "LXGW WenKai";
+            src: url("/Articles/fonts/lxgwwenkaiscreen.woff2") format("woff2");
+            font-display: swap;
+          }
+          
+          /* 全局字体设置 */
+          body {
+            font-family: "LXGW WenKai", "Source Han Serif CN", sans-serif;
+          }
+          
+          .post-title {
+            font-family: "Source Han Serif CN", serif;
           }
           
           :root {
-            --main-width: 1024px;    /* 主容器宽度 */
-            --article-width: 750px;   /* 文章内容宽度 */
-            --toc-width: 280px;       /* 目录宽度 */
-            --gap: 24px;              /* 间距 */
+            --main-width: 1200px;    /* 主容器宽度 */
+            --article-width: 800px;   /* 文章内容宽度 */
+            --toc-width: 300px;       /* 目录宽度 */
+            --gap: 32px;              /* 间距 */
+            --radius: 8px;            /* 圆角 */
+            --theme: rgb(255, 255, 255);
+            --entry: rgb(255, 255, 255);
+            --primary: rgb(30, 30, 30);
+            --secondary: rgb(108, 108, 108);
+            --tertiary: rgb(214, 214, 214);
+            --content: rgb(31, 31, 31);
+            --code-bg: rgb(245, 245, 245);
+            --border: rgb(238, 238, 238);
           }
           
-          /* 主容器 */
+          .dark {
+            --theme: rgb(29, 30, 32);
+            --entry: rgb(46, 46, 51);
+            --primary: rgb(218, 218, 219);
+            --secondary: rgb(155, 156, 157);
+            --tertiary: rgb(65, 66, 68);
+            --content: rgb(196, 196, 197);
+            --code-bg: rgb(55, 56, 62);
+            --border: rgb(51, 51, 51);
+          }
+          
+          /* 布局容器 */
           .main {
             max-width: var(--main-width);
             margin: 0 auto;
-            padding: 0 var(--gap);
+            padding: var(--gap);
           }
           
-          /* 文章容器 */
+          .page-header h1 {
+            font-size: 40px;
+            font-weight: 600;
+          }
+          
+          /* 文章样式 */
           .post-single {
+            position: relative;
             max-width: var(--article-width);
             margin: 0 auto;
-            padding-right: calc((var(--main-width) - var(--article-width)) / 4);  /* 为右侧预留空间 */
+            padding: var(--gap);
+            background: var(--entry);
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
           }
           
-          /* 目录容器 */
+          .post-single:hover {
+            transform: translateY(-2px);
+          }
+          
+          .post-content {
+            color: var(--content);
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin: var(--gap) 0;
+          }
+          
+          .post-content p {
+            margin: 1.5em 0;
+          }
+          
+          /* 目录样式 */
           .toc {
             position: fixed;
-            left: calc((100vw - var(--main-width)) / 2);  /* 居中对齐 */
-            top: 80px;  /* 顶部间距 */
+            right: calc((100vw - var(--main-width)) / 2 + var(--gap));
+            top: 100px;
             width: var(--toc-width);
-            max-height: calc(100vh - 120px);  /* 限制最大高度 */
+            max-height: calc(100vh - 150px);
             overflow-y: auto;
-            padding: 1rem;
+            padding: var(--gap);
             font-size: 0.95rem;
             background: var(--entry);
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
           }
           
-          /* 目录内部样式 */
+          .toc:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          
+          /* 目录内容样式 */
           .toc details {
-            margin-left: 0.5rem;
-            padding-left: 0.5rem;
+            margin: 0.5rem 0;
+            padding-left: 1rem;
             border-left: 2px solid var(--border);
+            transition: border-color 0.3s ease;
+          }
+          
+          .toc details:hover {
+            border-left-color: var(--primary);
           }
           
           .toc summary {
             cursor: pointer;
-            margin-bottom: 0.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--secondary);
+            font-weight: 500;
+            transition: color 0.3s ease;
+          }
+          
+          .toc summary:hover {
+            color: var(--primary);
           }
           
           .toc li {
             list-style: none;
-            padding: 4px 0;
+            padding: 0.3rem 0;
+            transition: all 0.3s ease;
+          }
+          
+          .toc li:hover {
+            padding-left: 0.5rem;
           }
           
           .toc a {
             color: var(--secondary);
             text-decoration: none;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            line-height: 1.6;
           }
           
           .toc a:hover {
             color: var(--primary);
-            padding-left: 4px;
+            text-decoration: none;
           }
           
           .toc .active {
             color: var(--primary);
             font-weight: 600;
+            background: linear-gradient(90deg, var(--tertiary) 0%, transparent 100%);
+            border-radius: var(--radius);
+            padding: 0.2rem 0.5rem;
           }
           
-          /* 移动设备适配 */
+          /* 响应式设计 */
           @media screen and (max-width: 1400px) {
             :root {
-              --main-width: 100%;
+              --main-width: 95vw;
               --article-width: 100%;
+              --toc-width: 250px;
             }
             
             .toc {
-              display: none;  /* 在小屏幕上隐藏目录 */
+              right: var(--gap);
+              transform: translateX(calc(100% + var(--gap)));
+              transition: transform 0.3s ease;
+            }
+            
+            .toc:hover {
+              transform: translateX(0);
+            }
+          }
+          
+          @media screen and (max-width: 768px) {
+            :root {
+              --gap: 16px;
+            }
+            
+            .toc {
+              display: none;
             }
             
             .post-single {
-              padding-right: 0;
+              padding: var(--gap);
+            }
+            
+            .post-content {
+              font-size: 1rem;
             }
           }
           
-          /* 文章内容样式 */
-          .post-content {
-            font-size: 1rem;
-            line-height: 1.8;
+          /* 代码样式优化 */
+          .post-content pre {
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: var(--radius);
+            background: var(--code-bg) !important;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
           }
           
-          /* 代码块样式 */
           .post-content pre code {
-            font-family: Consolas, Monaco, "LXGWWenKaiScreenR";
-            font-size: 0.9em;
+            font-family: "Fira Code", Consolas, Monaco, "LXGW WenKai", monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
           }
           
-          /* 图片样式 */
+          .post-content code {
+            padding: 0.2em 0.4em;
+            margin: 0 0.2em;
+            border-radius: 3px;
+            font-size: 0.85em;
+            background: var(--code-bg);
+          }
+          
+          /* 图片样式优化 */
           .post-content img {
             max-width: 100%;
             height: auto;
-            border-radius: 4px;
+            border-radius: var(--radius);
+            margin: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+          }
+          
+          .post-content img:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+          }
+          
+          /* 链接样式 */
+          .post-content a {
+            color: #0366d6;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+          }
+          
+          .post-content a:hover {
+            border-bottom-color: currentColor;
+          }
+          
+          /* 引用样式 */
+          .post-content blockquote {
+            margin: 1.5rem 0;
+            padding: 0.5rem 1rem;
+            border-left: 4px solid var(--primary);
+            background: var(--code-bg);
+            border-radius: 0 var(--radius) var(--radius) 0;
+          }
+          
+          /* 表格样式 */
+          .post-content table {
+            width: 100%;
+            margin: 1.5rem 0;
+            border-collapse: collapse;
+          }
+          
+          .post-content th,
+          .post-content td {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+          }
+          
+          .post-content th {
+            background: var(--code-bg);
+            font-weight: 600;
+          }
+          
+          .post-content tr:nth-child(even) {
+            background: var(--code-bg);
           }
           EOL
           
@@ -457,4 +632,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
