@@ -206,9 +206,21 @@ jobs:
             ShowToc: true
             TocOpen: true
             
-            homeInfoParams:
-              Title: "Hi there 👋"
-              Content: Welcome to my blog
+            profileMode:
+              enabled: true
+              title: "学习笔记 📚"
+              subtitle: "记录学习过程中的思考与收获"
+              imageUrl: "https://api.dicebear.com/7.x/bottts/svg?seed=felix"
+              imageTitle: "Avatar"
+              imageWidth: 120
+              imageHeight: 120
+              buttons:
+                - name: 文章
+                  url: "/Articles/posts"
+                - name: 分类
+                  url: "/Articles/categories"
+                - name: 标签
+                  url: "/Articles/tags"
               
             socialIcons:
               - name: github
@@ -224,9 +236,9 @@ jobs:
               
           menu:
             main:
-              - identifier: archives
-                name: 归档
-                url: /archives/
+              - identifier: posts
+                name: 文章
+                url: /posts/
                 weight: 10
               - identifier: categories
                 name: 分类
@@ -236,10 +248,14 @@ jobs:
                 name: 标签
                 url: /tags/
                 weight: 30
+              - identifier: archives
+                name: 归档
+                url: /archives/
+                weight: 40
               - identifier: search
                 name: 搜索
                 url: /search/
-                weight: 40
+                weight: 50
                 
           markup:
             highlight:
@@ -260,9 +276,42 @@ jobs:
 
       - name: Move content
         run: |
-          # 移动所有文章到 posts 目录
-          mv 从0开始做增长/* content/posts/ || true
-          mv AI大模型实战高手课/* content/posts/ || true
+          # 创建临时目录
+          mkdir -p temp_posts
+          
+          # 移动并处理文章
+          process_articles() {
+            local src_dir=$1
+            if [ -d "$src_dir" ]; then
+              for file in "$src_dir"/*; do
+                if [ -f "$file" ]; then
+                  # 提取文件名（不包含扩展名）
+                  filename=$(basename "$file")
+                  name="${filename%.*}"
+                  
+                  # 创建新的front matter
+                  echo "---" > "temp_posts/${name}.md"
+                  echo "title: \"${name}\"" >> "temp_posts/${name}.md"
+                  echo "date: $(date -Iseconds)" >> "temp_posts/${name}.md"
+                  echo "draft: false" >> "temp_posts/${name}.md"
+                  echo "categories: [\"${src_dir##*/}\"]" >> "temp_posts/${name}.md"
+                  echo "tags: []" >> "temp_posts/${name}.md"
+                  echo "---" >> "temp_posts/${name}.md"
+                  
+                  # 添加文章内容
+                  cat "$file" >> "temp_posts/${name}.md"
+                fi
+              done
+            fi
+          }
+          
+          # 处理每个源目录
+          process_articles "从0开始做增长"
+          process_articles "AI大模型实战高手课"
+          
+          # 移动处理后的文章到最终位置
+          mv temp_posts/* content/posts/
+          rm -rf temp_posts
           
           # 创建必要的页面
           cat > content/archives.md <<EOL
