@@ -29,25 +29,6 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Move content to Hugo structure
-        run: |
-          # 确保content/posts目录存在
-          mkdir -p content/posts
-          
-          # 移动所有markdown文件到content/posts
-          find . -maxdepth 1 -type f -name "*.md" -not -name "README.md" -exec mv {} content/posts/ \;
-          
-          # 移动文章目录中的所有内容到content/posts
-          if [ -d "从0开始做增" ]; then
-            mv "从0开始做增"/* content/posts/
-          fi
-          if [ -d "AI大模型实战随手记" ]; then
-            mv "AI大模型实战随手记"/* content/posts/
-          fi
-          if [ -d "static" ]; then
-            mv "static"/* content/posts/
-          fi
-
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v4
@@ -67,13 +48,10 @@ jobs:
           mkdir -p static/fonts
           mkdir -p static/images
           mkdir -p content/posts
-          mkdir -p content/categories
-          mkdir -p content/tags
-          mkdir -p content/archives
           mkdir -p content/search
           
           # 下载并安装字体（直接从GitHub仓库下载，添加重试逻辑）
-          download_with_retry() {
+          function download_with_retry {
             local url=$1
             local output=$2
             local max_attempts=3
@@ -296,6 +274,105 @@ jobs:
               startLevel: 2
           EOL
 
+      - name: Move content
+        run: |
+          # 创建临时目录
+          mkdir -p temp_posts
+          
+          # 定义关键词和对应的标签
+          declare -A keyword_tags=(
+            ["GPT"]="人工智能"
+            ["ChatGPT"]="人工智能"
+            ["大模型"]="人工智能"
+            ["LLM"]="人工智能"
+            ["机器学习"]="人工智能"
+            ["深度学习"]="人工智能"
+            ["神经网络"]="人工智能"
+            ["人工智能"]="人工智能"
+            ["增长"]="增长"
+            ["营销"]="增长"
+            ["获客"]="增长"
+            ["转化"]="增长"
+            ["用户"]="增长"
+            ["数据"]="数据分析"
+            ["分析"]="数据分析"
+            ["指标"]="数据分析"
+            ["监控"]="数据分析"
+            ["技术"]="技术开发"
+            ["架构"]="技术开发"
+            ["开发"]="技术开发"
+            ["编程"]="技术开发"
+            ["产品"]="产品设计"
+            ["设计"]="产品设计"
+            ["体验"]="产品设计"
+            ["运营"]="运营推广"
+            ["推广"]="运营推广"
+            ["渠道"]="运营推广"
+          )
+          
+          # 移动并处理文章
+          process_articles() {
+            local src_dir=$1
+            if [ -d "$src_dir" ]; then
+              for file in "$src_dir"/*; do
+                if [ -f "$file" ]; then
+                  # 提取文件名（不包含扩展名）
+                  filename=$(basename "$file")
+                  name="${filename%.*}"
+                  
+                  # 读取文章内容到变量
+                  content=$(cat "$file")
+                  
+                  # 初始化标签数组
+                  declare -A found_tags
+                  
+                  # 遍历关键词查找标签
+                  for keyword in "${!keyword_tags[@]}"; do
+                    if echo "$content" | grep -q "$keyword"; then
+                      found_tags["${keyword_tags[$keyword]}"]=1
+                    fi
+                  done
+                  
+                  # 将标签数组转换为YAML数组格式
+                  tags_yaml=""
+                  for tag in "${!found_tags[@]}"; do
+                    tags_yaml="$tags_yaml\"$tag\", "
+                  done
+                  tags_yaml=${tags_yaml%, }  # 移除最后的逗号和空格
+                  
+                  # 如果没有找到标签，添加默认标签
+                  if [ -z "$tags_yaml" ]; then
+                    tags_yaml="\"其他\""
+                  fi
+                  
+                  # 创建新的front matter
+                  echo "---" > "temp_posts/${name}.md"
+                  echo "title: \"${name}\"" >> "temp_posts/${name}.md"
+                  echo "date: $(date -Iseconds)" >> "temp_posts/${name}.md"
+                  echo "draft: false" >> "temp_posts/${name}.md"
+                  echo "categories: [\"${src_dir##*/}\"]" >> "temp_posts/${name}.md"
+                  echo "tags: [$tags_yaml]" >> "temp_posts/${name}.md"
+                  echo "---" >> "temp_posts/${name}.md"
+                  
+                  # 添加文章内容
+                  echo "$content" >> "temp_posts/${name}.md"
+                fi
+              done
+            fi
+          }
+          
+          # 自动处理所有文件夹
+          for dir in */; do
+            if [ "$dir" != "content/" ] && [ "$dir" != "themes/" ] && [ "$dir" != "static/" ] && [ "$dir" != "layouts/" ] && [ "$dir" != "assets/" ]; then
+              echo "Processing directory: $dir"
+              process_articles "${dir%/}"
+            fi
+          done
+          
+          # 移动处理后的文章到最终位置
+          mv temp_posts/* content/posts/
+          rm -rf temp_posts
+          
           # 创建必要的页面
           cat > content/archives.md <<EOL
           ---
@@ -310,19 +387,6 @@ jobs:
           ---
           title: "搜索"
           layout: "search"
-          ---
-          EOL
-
-          # 创建分类和标签索引页面
-          cat > content/categories/_index.md <<EOL
-          ---
-          title: "分类"
-          ---
-          EOL
-
-          cat > content/tags/_index.md <<EOL
-          ---
-          title: "标签"
           ---
           EOL
 
