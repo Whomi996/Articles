@@ -281,33 +281,33 @@ jobs:
           
           # 定义关键词和对应的标签
           declare -A keyword_tags=(
-            ["GPT"]="AI"
-            ["ChatGPT"]="AI"
-            ["大模型"]="AI"
-            ["LLM"]="AI"
-            ["机器学习"]="AI"
-            ["深度学习"]="AI"
-            ["神经网络"]="AI"
-            ["人工智能"]="AI"
-            ["增长"]="Growth"
-            ["营销"]="Growth"
-            ["获客"]="Growth"
-            ["转化"]="Growth"
-            ["用户"]="Growth"
-            ["数据"]="Data"
-            ["分析"]="Data"
-            ["指标"]="Data"
-            ["监控"]="Data"
-            ["技术"]="Tech"
-            ["架构"]="Tech"
-            ["开发"]="Tech"
-            ["编程"]="Tech"
-            ["产品"]="Product"
-            ["设计"]="Product"
-            ["体验"]="Product"
-            ["运营"]="Operation"
-            ["推广"]="Operation"
-            ["渠道"]="Operation"
+            ["GPT"]="人工智能"
+            ["ChatGPT"]="人工智能"
+            ["大模型"]="人工智能"
+            ["LLM"]="人工智能"
+            ["机器学习"]="人工智能"
+            ["深度学习"]="人工智能"
+            ["神经网络"]="人工智能"
+            ["人工智能"]="人工智能"
+            ["增长"]="增长"
+            ["营销"]="增长"
+            ["获客"]="增长"
+            ["转化"]="增长"
+            ["用户"]="增长"
+            ["数据"]="数据分析"
+            ["分析"]="数据分析"
+            ["指标"]="数据分析"
+            ["监控"]="数据分析"
+            ["技术"]="技术开发"
+            ["架构"]="技术开发"
+            ["开发"]="技术开发"
+            ["编程"]="技术开发"
+            ["产品"]="产品设计"
+            ["设计"]="产品设计"
+            ["体验"]="产品设计"
+            ["运营"]="运营推广"
+            ["推广"]="运营推广"
+            ["渠道"]="运营推广"
           )
           
           # 移动并处理文章
@@ -342,7 +342,7 @@ jobs:
                   
                   # 如果没有找到标签，添加默认标签
                   if [ -z "$tags_yaml" ]; then
-                    tags_yaml="\"Other\""
+                    tags_yaml="\"其他\""
                   fi
                   
                   # 创建新的front matter
@@ -361,9 +361,13 @@ jobs:
             fi
           }
           
-          # 处理每个源目录
-          process_articles "从0开始做增长"
-          process_articles "AI大模型实战高手课"
+          # 自动处理所有文件夹
+          for dir in */; do
+            if [ "$dir" != "content/" ] && [ "$dir" != "themes/" ] && [ "$dir" != "static/" ] && [ "$dir" != "layouts/" ] && [ "$dir" != "assets/" ]; then
+              echo "Processing directory: $dir"
+              process_articles "${dir%/}"
+            fi
+          done
           
           # 移动处理后的文章到最终位置
           mv temp_posts/* content/posts/
