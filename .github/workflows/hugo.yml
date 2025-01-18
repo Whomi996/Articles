@@ -50,9 +50,39 @@ jobs:
           mkdir -p content/posts
           mkdir -p content/search
           
-          # 下载并安装字体（使用更快的jsDelivr CDN）
-          wget -O static/fonts/SourceHanSerifCN-Regular.otf https://cdn.jsdelivr.net/gh/adobe-fonts/source-han-serif@release/OTF/SimplifiedChinese/SourceHanSerifSC-Regular.otf
-          wget -O static/fonts/lxgwwenkaiscreen.ttf https://cdn.jsdelivr.net/gh/lxgw/LxgwWenKai-Lite@main/dist/LXGWWenKaiLite-Regular.ttf
+          # 下载并安装字体（直接从GitHub仓库下载，添加重试逻辑）
+          function download_with_retry {
+            local url=$1
+            local output=$2
+            local max_attempts=3
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Downloading $output (Attempt $attempt of $max_attempts)"
+              if wget --timeout=30 --tries=3 -O "$output" "$url"; then
+                return 0
+              fi
+              attempt=$((attempt + 1))
+              sleep 5
+            done
+            return 1
+          }
+          
+          # 下载思源宋体
+          if ! download_with_retry \
+            "https://github.com/adobe-fonts/source-han-serif/raw/release/OTF/SimplifiedChinese/SourceHanSerifSC-Regular.otf" \
+            "static/fonts/SourceHanSerifCN-Regular.otf"; then
+            echo "Failed to download Source Han Serif font"
+            exit 1
+          fi
+          
+          # 下载霞鹜文楷
+          if ! download_with_retry \
+            "https://github.com/lxgw/LxgwWenKai-Lite/releases/download/v1.311/LXGWWenKaiLite-Regular.ttf" \
+            "static/fonts/lxgwwenkaiscreen.ttf"; then
+            echo "Failed to download LXGW WenKai font"
+            exit 1
+          fi
           
           # 创建自定义样式文件
           cat > assets/css/extended/custom-style.css <<EOL
@@ -71,7 +101,7 @@ jobs:
           
           /* 全局字体设置 */
           body {
-            font-family: "LXGW WenKai", "Source Han Serif CN", sans-serif;
+            font-family: system-ui, -apple-system, "LXGW WenKai", sans-serif;
           }
           
           .post-title {
@@ -231,8 +261,8 @@ jobs:
       - name: Move content
         run: |
           # 移动所有文章到 posts 目录
-          mv 从0开始做增长/* content/posts/
-          mv AI大模型实战高手课/* content/posts/
+          mv 从0开始做增长/* content/posts/ || true
+          mv AI大模型实战高手课/* content/posts/ || true
           
           # 创建必要的页面
           cat > content/archives.md <<EOL
