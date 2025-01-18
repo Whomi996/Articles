@@ -47,6 +47,11 @@ jobs:
           mkdir -p layouts/_default/_markup
           mkdir -p static/fonts
           mkdir -p static/images
+          mkdir -p content/posts
+          mkdir -p content/categories
+          mkdir -p content/tags
+          mkdir -p content/archives
+          mkdir -p content/search
           
           # 下载并安装字体（直接从GitHub仓库下载，添加重试逻辑）
           download_with_retry() {
